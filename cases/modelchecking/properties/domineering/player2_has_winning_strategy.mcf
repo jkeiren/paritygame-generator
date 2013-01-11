@@ -1,0 +1,5 @@
+% This formula encodes the property that Player 2 has a winning strategy,
+% such that he wins in a finite number of steps.
+% This assumes that Player 1 makes the first moves, and that the turns
+% strictly alternate.
+mu X . <Player2Wins>true || [true]<true>X

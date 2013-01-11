@@ -1,0 +1,1 @@
+[(! exists id:Nat . (val(id < N) && up(id)))* . exists id1:Nat . (val(id1 < N) && move(id1, UP))]false

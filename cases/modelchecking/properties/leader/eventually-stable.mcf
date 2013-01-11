@@ -1,0 +1,15 @@
+nu X(n: Int = 0) .
+(
+   ([Add]X(n + 1))
+&& ([Remove]X(n - 1))
+&& ([tau || Trigger]X(n))
+&& (val(n == N) || mu Y . 
+   (
+     (
+       mu Count(i: Nat = 0) .
+         (val(i < n) && ([leader]Count(i + 1)) && (<leader>true)) ||
+         (val(i == n) && [leader]false)
+     ) 
+     || ((<tau>true) && ([tau]Y))
+   )
+))

@@ -1,0 +1,11 @@
+% Formula obtained from pgsolver-3.0/src/generators/elevatorverification.ml
+% (second formula named in that file)
+%
+% Intuitively, this expresses the following CTL* property:
+% A(GF isPressed(storeys) -> GF isAt(storeys)), with n the maximal floor in the model.
+%
+% We use actions isPressed and isAt to account for the predicates in the
+% original version (as we use action based models). Therefore we need to cope in
+% the formula.
+
+nu X.mu Y.nu Z.([move || close]X && (<isAt(storeys)>true || ([move || close]Z && (!(<isPressed(storeys)>true) || [move || close]Y))))

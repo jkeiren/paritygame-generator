@@ -1,0 +1,69 @@
+% Model of an elevator for n floors.
+% Originally described in "Solving Parity Games in Practice" by Oliver
+% Friedmann and Martin Lange.
+%
+% In accordance to the original model, after a button is pressed, first
+% something else needs to happen.
+
+% Scheduling policy
+sort Policy = struct FIFO | LIFO;
+map policy: Policy;
+%eqn policy = FIFO;
+eqn policy = LIFO;
+
+sort Floor = Pos;
+     Requests = List(Floor);
+
+% The number of floors in the building
+map storeys: Floor;
+eqn storeys = 4;
+
+% Add request in the appropriate place, according to the queueing behaviour
+% FIFO use queueing
+% LIFO use stacking
+map addRequest, addRequestFIFO, addRequestLIFO,remove : Requests # Floor -> Requests;
+var r: Requests;
+    f,g: Floor;
+eqn (policy == FIFO) -> addRequest(r,f) = addRequestFIFO(r, f);
+    (policy == LIFO) -> addRequest(r,f) = addRequestLIFO(r, f);
+    addRequestFIFO([], f) = [f];
+    addRequestFIFO(g |> r, f) = g |> r;
+    addRequestFIFO(g |> r, f) = g |> addRequest(r, f);
+
+    addRequestLIFO(r,f) = f |> remove(r,f);
+    remove([],f) = [];
+    f == g -> remove(g |> r, f) = remove(r,f);
+    f != g -> remove(g |> r, f) = g |> remove(r,f);
+
+% Compute the new position of the elevator, based on two floors.
+% The first is the current floor, the second is the floor we first move to.
+map newPosition: Floor # Floor -> Floor;
+var f1, f2: Floor;
+eqn (f1 < f2) -> newPosition(f1, f2) = f1 + 1;
+    (f1 > f2) -> newPosition(f1, f2) = Int2Pos(f1 - 1);
+    (f1 == f2) -> newPosition(f1, f2) = f1;
+
+act isAt, isPressed, request: Floor;
+    move,close;
+
+proc Elevator(position: Floor, dooropen: Bool, requests: Requests) =
+       isAt(position) . Elevator()
+     + sum f: Floor. (f <= storeys && f in requests) -> isPressed(f) . Elevator()
+     % "non-deterministically, a request can be added, or no request is added"
+     % this is a counter intuitive way of modelling, but seems to match what
+     % happens in Friedmann and Lange's paper
+     + sum b: Bool, f, newposition: Floor, r: Requests.
+           (f <= storeys && r == if(b, addRequest(requests, f), requests)
+            && newposition <= storeys)
+               -> (
+                    (newposition == newPosition(position, head(r)) 
+                     && r != [] 
+                     && !dooropen)
+                       -> (move . Elevator(newposition, 
+                                          newposition == head(r),
+                                          if(newposition == head(r), tail(r), r)))
+                      <> (dooropen) -> (close . Elevator(dooropen = false))
+                  );
+
+init Elevator(1, true, []);
+  

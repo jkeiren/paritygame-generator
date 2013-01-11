@@ -1,0 +1,7 @@
+% Every request emitted by a node 0 <= id <= n-1 on gate PAreq with parameter
+% immediate is followed by a matching confirmation on gate PAcon with parameter
+% won.
+% As ACTL formula, it was expressed as follows in the paper "..."
+% by Mateescu and Shighireanu.
+% AG_true [PAreq_id_immediate] INEV(!PAreq_id_immediate, PAcon_id_won)
+forall id:Nat . val(id <= N) => [true*][cPAreq(id, immediate)] mu X. (( <cPAreq(id, immediate)>true && [cPAreq(id, immediate)]X && [!(cPAreq(id, immediate) || cPAcon(id, won))]false) || (<cPAcon(id, won)>true && [!(cPAcon(id, won))]false))

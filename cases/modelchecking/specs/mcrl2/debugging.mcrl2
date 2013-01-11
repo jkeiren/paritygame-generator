@@ -1,0 +1,3 @@
+act a;
+proc X = a.X;
+init X;

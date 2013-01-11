@@ -1,0 +1,39 @@
+% Between two subsequent "subaction gap" signals at most two asynchronous 
+% packets have travelled over the BUS.
+% As ACTL formula, it was expressed as follows in the paper "..."
+% by Mateescu and Shighireanu.
+%
+% AG_true [cPDind_any_sgap]
+%   AG_!(cPDind_any_sgap || LDcon_any) [LDcon_any]
+%     AG_!(cPDind_any_sgap || LDcon_any) [LDcon_any] 
+%       AG_!cPDind_any_sgap [LDcon_any] false
+%
+% This translates to our mu calculus as follows (translation obtained from
+% Tim Willemse)
+[true*]
+
+  [somecPDind]
+
+  [( !(somecPDind) &&
+    (forall l:LDC. !(LDcon(0,l) || LDcon(1,l) || LDcon(2,l))))*]
+
+%  [((forall s:SIGNAL, id: Nat. val(id <= N) => !cPDind(id,s))&&
+%     (forall l:LDC, id:Nat . val(id <= N) => !LDcon(id,l)))*]
+
+  [exists l:LDC. LDcon(0,l) || LDcon(1,l) || LDcon(2,l)]
+
+  [(( !(somecPDind)) &&
+    (forall l:LDC. !(LDcon(0,l) || LDcon(1,l) || LDcon(2,l))))*]
+
+%  [((forall s:SIGNAL, id:Nat. val(id <= N) => !cPDind(id,s))&&
+%     (forall l:LDC, id:Nat. val(id <= N) => !LDcon(id,l)))*]
+
+  [exists l:LDC. LDcon(0,l) || LDcon(1,l) || LDcon(2,l)]
+
+  %[(forall s:SIGNAL, id:Nat. val(id <= N) => !cPDind(id,s))*]
+  [(!(somecPDind ))*]
+
+  [exists l:LDC. LDcon(0,l) || LDcon(1,l) ||
+  LDcon(2,l)]false
+
+

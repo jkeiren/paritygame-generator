@@ -1,0 +1,40 @@
+% Example implementing Hanoi towers, using natural numbers for disks.
+% As a parameter it takes the number of disks.
+%
+% Jeroen Keiren 10/9/2010
+
+sort Disk = Pos;
+     Stack = List(Disk);
+
+map disks: Pos;
+eqn disks = 12;
+
+map initStack: Stack;
+map initStack_impl: Nat # Stack -> Stack;
+eqn initStack = initStack_impl(disks, []);
+
+var p: Nat;
+    s: Stack;
+eqn initStack_impl(0, s) = s;
+    p > 0 -> initStack_impl(p, s) = initStack_impl(Int2Nat(p - 1), Nat2Pos(p) |> s);
+
+map canMove: Stack # Stack -> Bool;
+var d1,d2: Disk;
+    s1,s2: Stack;
+eqn canMove([],s2) = false;
+    canMove(d1 |> s1, []) = true;
+    canMove(d1 |> s1, d2 |> s2) = d1 < d2;
+
+act move, done;
+
+proc Hanoi(s1,s2,s3: Stack) =
+    (canMove(s1, s2)) -> move . Hanoi(tail(s1), head(s1) |> s2, s3)
+  + (canMove(s1, s3)) -> move . Hanoi(tail(s1), s2, head(s1) |> s3)
+  + (canMove(s2, s1)) -> move . Hanoi(head(s2) |> s1, tail(s2), s3)
+  + (canMove(s2, s3)) -> move . Hanoi(s1, tail(s2), head(s2) |> s3)
+  + (canMove(s3, s1)) -> move . Hanoi(head(s3) |> s1, s2, tail(s3))
+  + (canMove(s3, s2)) -> move . Hanoi(s1, head(s3) |> s2, tail(s3))
+  + (s2 == initStack) -> done . Hanoi(s1, s2, s3);
+
+init Hanoi(initStack, [], []);
+

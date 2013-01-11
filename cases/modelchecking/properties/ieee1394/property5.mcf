@@ -1,0 +1,13 @@
+% Between two subsequent "arbitration reset gap" signals no node 0 <= id <= n-1
+% receives a confirmation on gate PAcon with parameter won upon a request on
+% gate PAreq with parameter fair more than once.
+%
+% As ACTL formula, it was expressed as follows in the paper "..."
+% by Mateescu and Shighireanu.
+% AG_true [arbresgap]
+%   AG_!arbresgap [PAreq_id_fair][PAcon_id_won]
+%     AG_!arbresgap [PAreq_id_fair][PAcon_id_won] false
+%
+% As mu calculus formula, this is:
+forall id:Nat . val(id <= N) => [true* . arbresgap . (!arbresgap)* . cPAreq(id, fair) . cPAcon(id, won) . (!arbresgap)* . cPAreq(id, fair) . cPAcon(id, won)]false
+

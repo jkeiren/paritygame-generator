@@ -1,0 +1,13 @@
+% This formula is applicable to games/othello/othello.mcrl2
+%
+% See specification for an explanation.
+mu X.((<Outcome(win(white))>true) || 
+       (
+         (exists x,y:Nat.<Put(x, y, white)>X)
+       ) ||
+       (
+         (exists x,y:Nat.<Put(x, y, red)>true) &&
+         (forall x,y:Nat.[Put(x, y, red)]X)
+       ) ||
+         ((<Pass>X) && ([Pass]X))
+     )

@@ -1,0 +1,7 @@
+% It is always possible for the system to get to a state in which pressing
+% the DOWN button of any lift will yield the appropriate response
+%
+% Property obtained from J.F. Groote, J. Pang and A.G. Wouters,
+% "Analysis of a distributed system for lifting trucks", Journal of Logic and
+% Algebraic programming 55 (2003) 21-56.
+[true*]<true*. (exists n:Nat . val(n < N) && down(n))>true

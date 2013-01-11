@@ -1,0 +1,19 @@
+
+% TODO: find out what is meant by normal_movement
+% for now approximate with true...
+%[ normal_movement* .
+nu X(n: Nat = 0) .
+  (val(n < Int2Nat(N - 1)) => [!(exists id: Nat. val(id < N) && move(id, UP))* . move(n, UP)] X(n + 1)) &&
+  (val(n == Int2Nat(N - 1)) => [!(exists id: Nat. val(id < N) && move(id, UP))* . move(n, DOWN)]false)
+
+%[ %true* .
+%  !(exists i: Nat. val(id < N) && move(id, UP))* .
+%  move(1, UP) .
+%  !(exists i: Nat. val(id < N) && move(id, UP))* .
+%  move(2, UP) .
+%  !(exists i: Nat. val(id < N) && move(id, UP))* .
+%  move(3, UP) .
+%  !(exists i: Nat. val(id < N) && move(id, UP))* .
+%  move(4, DOWN)
+%] false
+

@@ -1,0 +1,14 @@
+map n: Pos;
+eqn n = ${buffersize};
+
+sort D = struct ${data};
+
+act r,s:D;
+
+proc Buffer(b: List(D)) = 
+  (#b < n) -> sum d:D . r(d) . Buffer(d |> b)
++ (b != []) -> s(rhead(b)) . Buffer(rtail(b));
+
+
+init Buffer([]);
+

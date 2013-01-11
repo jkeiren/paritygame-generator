@@ -1,0 +1,8 @@
+
+act somecPDind;
+var n:Nat;
+    s:SIGNAL;
+rename
+  cPDind(n,s) => somecPDind;
+
+

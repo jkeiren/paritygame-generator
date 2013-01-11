@@ -1,0 +1,18 @@
+% If a node 0 <= id <= n-1 emitted a request on the LDreq gate, and
+% node id communicates a request on the PAreq gate each time it receives a
+% subactgap signal on the PDind gate (and before an arbresgap occurs), it also
+% eventually receives a confirmation on the LDcon gate.
+% As ACTL formula, it was expressed as follows in the paper "..."
+% by Mateescu and Shighireanu.
+%
+% AG_true [LDreq_id] AG_!(PDind_id_sgap || arbresgap || LDcon_id) [ PDind_id_sgap]
+%   AG_!(PAreq_id || arbresgap) [PAreq_id]
+%     INEV(!arbresgap, LDcon_id)
+% where INEV(p, q) = A[true_p U_q true].
+% INEV(p,q) is translated to mu calculus as follows:
+% mu X. ( (<p>true && [p]X && [!(p || q)]false) || (<q>true && [!q]false) )
+%
+% We then obtain the following formula.
+
+forall id:Nat . val(id <= N) => [true* . (exists n:Nat, h: HEADER, d: DATA . val(n <= N) && LDreq(id, n, h, d)) . !(cPDind(id, subactgap) || arbresgap)* . (exists p: PAR . cPAreq(id, p))] mu X. (( <!arbresgap>true && [!arbresgap]X && [!(!arbresgap || (exists l: LDC . LDcon(id, l)))]false ) || (<exists l: LDC . LDcon(id, l)>true && [!(exists l: LDC . LDcon(id, l))]false))
+

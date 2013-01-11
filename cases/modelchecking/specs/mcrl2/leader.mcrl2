@@ -1,0 +1,71 @@
+% In this version, a node will prioritise handling replies to its own requests,
+% delaying the reply to another node while replies to its own requests are 
+% available.
+
+sort Message = struct OFFER | ACCEPT | REJECT | NONE?not;
+sort Status = struct FOLLOWER | LEADER | TRIGGERED | AWAIT;
+act send, send', Send,
+    recv, recv', Recv: Nat # Message;
+    reply, reply', Reply: Nat # Message # Message;
+    leader, tag;
+    Trigger, Add, Remove;
+    idle, Idle;
+
+map N: Pos;
+eqn N = ${nparticipants};
+
+map all: Set(Pos);
+    all: Pos -> Set(Pos);
+var n: Pos;
+eqn all = all(1);
+    n > N -> all(n) = {};
+    n <= N -> all(n) = {n} + all(n + 1);
+
+proc Channel(from, to: Pos, send: Message, received: Message, togo: Set(Pos)) =
+  (to == from) -> (
+    sum id: Pos . (id in togo) -> send'(from, OFFER) . Channel(to=id)
+  ) <> (
+    sum r: Message . 
+      not(received) -> reply'(to, OFFER, r) . Channel(received=r, togo=if(togo=={to} || r==ACCEPT, all - {from}, togo - {to}))
+  )
++ not(received)
+  -> idle . Channel()
+  <> recv'(from, received) . Channel(to=from, received=NONE);
+  
+proc Node(id: Nat, status: Status) =
+  (FOLLOWER == status) -> (
+    reply(id, OFFER, ACCEPT) . Node(status=LEADER)
+  + Add . Node(status=LEADER)
+  )
++ (FOLLOWER != status) -> (
+    idle|reply(id, OFFER, REJECT) . Node()
+  + (LEADER == status) -> (
+      Trigger . Node(status=TRIGGERED)
+    + leader . tag . Node()
+    + Remove . Node(status=FOLLOWER)
+    )
+  + (TRIGGERED == status) -> (
+      send(id, OFFER) . Node(status=AWAIT)
+    )
+  + (AWAIT == status) -> (
+      recv(id, REJECT) . Node(status=TRIGGERED)
+    + recv(id, ACCEPT) . Node(status=FOLLOWER)
+    )
+  );
+
+proc Part(id: Pos) =
+  hide({Idle},
+    allow({Send, Recv, Idle|reply, reply, reply', leader, Add, Remove, Trigger}, 
+      comm({send|send'->Send, recv|recv'->Recv, idle|idle->Idle}, 
+        Node(id, FOLLOWER) || Channel(id, id, NONE, NONE, all - {id})
+  )));
+
+proc Sys(p: Pos) =
+  (p > 1) -> (Part(p) || Sys(Int2Pos(p - 1))) <> Part(1);
+
+init 
+  hide({Send, Recv, Reply},
+    allow({Send, Recv, Reply, leader, Trigger, Add, Remove},
+      comm({reply|reply'->Reply},
+        Sys(N) 
+  )));

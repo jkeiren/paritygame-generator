@@ -1,0 +1,9 @@
+%
+% Property obtained from J.F. Groote, J. Pang and A.G. Wouters,
+% "Analysis of a distributed system for lifting trucks", Journal of Logic and
+% Algebraic programming 55 (2003) 21-56.
+forall address: Nat . val(address < N) =>
+  [(!(exists id: Nat . val(id < N) && (up(id) || down(id))))* .
+    down(address) .
+    (!(exists id: Nat . val(id < N) && (up(id) || down(id)) || released(address)))* ]
+  <(!(exists id: Nat . val(id < N) && (up(id) || down(id)) || released(address)))* . (exists id:Nat . val(id < N) && move(id, DOWN))>true

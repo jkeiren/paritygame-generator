@@ -1,0 +1,5 @@
+% This formula encodes the property that player Blue has a winning strategy,
+% such that he wins in a finite number of steps.
+% This assumes that Red makes the first move, and that the turns in the
+% game are strictly alternating.
+mu X . <BlueWins>true || [true]<true>X

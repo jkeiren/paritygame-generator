@@ -1,0 +1,12 @@
+% "P1394(n) is deadlock free".
+% As ACTL formula, it was expressed as follows in the paper "..."
+% by Mateescu and Shighireanu.
+% init => !EF_true <!(arbresgap || LDcon_any)> EF_LDcon_any [true] false
+%
+% This translates to our mu calculus as follows.
+%!(<true* . !(arbresgap || (exists l:LDC, id: Nat. val(id <= N) && LDcon(id, l))) . (exists l:LDC, id: Nat . val(id <= N) && LDcon(id, l) ) * >[true]false)
+
+% Removed regular expressions by hand to work around an issue in the
+% monotonicity check of lps2pbes, toolset revision 8222
+%!(mu X. <!(arbresgap || (exists l: LDC, id: Nat. val(id <= N) && LDcon(id, l)))>(mu Y. [true]false || <exists l: LDC, id: Nat. val(id <= N) && LDcon(id, l)>Y) || <true>X)
+nu X. [!(arbresgap || (exists l: LDC, id: Nat. val(id <= N) && LDcon(id, l)))](nu Y. <true>true && [exists l: LDC, id: Nat. val(id <= N) && LDcon(id, l)]Y) && [true]X
