@@ -14,7 +14,7 @@ def run(poolsize, resultsfile):
     if os.path.exists(resultsfile):
       log.info('Found results file ({0}), parsing.'.format(resultsfile))
       try:
-        casesdone = yaml.load(open(resultsfile).read()).keys()
+        casesdone = yaml.load(open(resultsfile).read())
         if casesdone:
           log.info('Skipping the following cases because results for them were found:')
       except AttributeError:
@@ -26,7 +26,8 @@ def run(poolsize, resultsfile):
   pool = TaskPool(poolsize)
   try:
     tasks = []
-    for task in modelchecking.getcases() + equivchecking.getcases() + pgsolver.getcases():
+    #for task in modelchecking.getcases() + equivchecking.getcases() + pgsolver.getcases():
+    for task in modelchecking.getcases():
       if str(task) in casesdone:
         log.info('- ' + str(task))
       else:
@@ -35,7 +36,7 @@ def run(poolsize, resultsfile):
     for case in pool.run(*tasks):
       if isinstance(case, (modelchecking.Case, equivchecking.Case, pgsolver.Case)):
         log.info('Got result for {0}'.format(case))
-        resultsfile.write(yaml.dump({str(case): {'sizes': case.sizes, 'times': case.times, 'solutions': case.solutions}}))
+        resultsfile.write(yaml.dump([str(case)], default_flow_style = False))
         resultsfile.flush()
     log.info('Done.')
 

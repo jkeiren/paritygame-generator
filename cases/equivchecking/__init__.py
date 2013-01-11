@@ -63,10 +63,6 @@ class Case(TempObj):
   
   def phase1(self, log):
     log.info('Finalising {0}'.format(self))
-    for case in self.results:
-      self.sizes[str(case)] = case.sizes
-      self.times[str(case)] = case.times
-      self.solutions[str(case)] = case.solutions
     for filename in self.__files:
       os.unlink(filename)
   

@@ -43,10 +43,6 @@ class Case(TempObj):
     self._temppath = os.path.join(os.path.split(__file__)[0], 'temp')
     self._prefix = '{0}{1}'.format(self.__name, ('_'.join('{0}={1}'.format(k,v) for k,v in self.__kwargs.items())))
     self.proppath = os.path.join(os.path.split(__file__)[0], 'properties', spec.TEMPLATE)
-    self.sizes = {}
-    self.times = {}
-    self.solutions = {}
-    self.results = []
   
   def __str__(self):
     argstr = ', '.join(['{0}={1}'.format(k, v) for k, v in self.__kwargs.items()])
@@ -67,13 +63,6 @@ class Case(TempObj):
       self.subtasks.append(Property(self._prefix, lps, os.path.join(self.proppath, prop), 
                                     self._temppath))
     
-  def phase1(self, log):
-    log.debug('Finalising {0}'.format(self))
-    for prop in self.results:
-      self.sizes[str(prop)] = prop.sizes
-      self.times[str(prop)] = prop.times
-      self.solutions[str(prop)] = prop.solutions
-
 class IEEECase(Case):
   def _makeLPS(self, log):
     '''Linearises the specification in self._mcrl2 and applies lpssuminst to the
@@ -103,6 +92,8 @@ class GameCase(Case):
     return tools.lpsconstelm('-ctvrjittyc' if self.__use_compiled_constelm else '-ctv', stdin=lps)
 
 def getcases():
+  return [Case('Debug spec')]
+
   return \
     [Case('Debug spec'),
      Case('Othello'),

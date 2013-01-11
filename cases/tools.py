@@ -73,7 +73,7 @@ class Tool(object):
       self.__log.error('No match!')
       self.__log.error(filter_)
       self.__log.error(self.error)
-      if isinstance(result, list):
+      if isinstance(self.result, list):
         self.result.append({})
       else:
         self.result = [self.result, {}]
@@ -101,6 +101,7 @@ class Tool(object):
       self.__apply_filter(filter_)
     return self.result
 
+pginfo = Tool('pginfo', __LOG)
 mcrl22lps = Tool('mcrl22lps', __LOG)
 lps2pbes = Tool('lps2pbes', __LOG)
 lpsactionrename = Tool('lpsactionrename', __LOG)
