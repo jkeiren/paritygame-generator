@@ -146,13 +146,13 @@ done
 #echo "`pwd`/GOAL-20120409/goal" >> ${bindir}/goal
 #chmod +x ${bindir}/goal
 
-# GOAL
-######
+# GOAL - http://goal.im.ntu.edu.tw/
+###################################
 cd ${bindir}
 wget https://www.dropbox.com/s/uh4d6gqb6ko4dbj/goal_2009_04_19.jar
 
-# gist
-######
+# gist - http://pub.ist.ac.at/gist/
+###################################
 cd ${tooldir}
 wget https://www.dropbox.com/s/q9u1l0otcib038u/package.tar.gz
 tar -zxvf package.tar.gz
