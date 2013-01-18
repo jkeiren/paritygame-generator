@@ -10,9 +10,13 @@
 # export LD_LIBRARY_PATH=`pwd`/tools/install/lib:$LD_LIBRARY_PATH
 ################################################################################
 
+# exit on error
+set -e
+
 # Set up directories and environment
 dir=`pwd`
 tooldir=${dir}/tools
+installdir=${tooldir}/install
 bindir=${tooldir}/install/bin
 
 nthreads=1
@@ -20,11 +24,27 @@ if [[ $# -ge 1 ]]; then
   nthreads=$1
 fi
 
-mkdir ${tooldir}
 cd ${tooldir}
 mkdir -p ${bindir}
 
+echo "Make sure your BOOST_ROOT has been set if you want to use a non-default Boost installation"
+
 export PATH=${tooldir}/install/bin:$PATH
+export LD_LIBRARY_PATH=${tooldir}/install/lib:$LD_LIBRARY_PATH
+
+# yaml-cpp
+# dependency of pginfo, not standard available on most platforms
+################################################################
+cd ${tooldir}
+wget http://yaml-cpp.googlecode.com/files/yaml-cpp-0.5.0.tar.gz
+tar -zxvf yaml-cpp-0.5.0.tar.gz
+#cd yaml-cpp-0.5.0
+mkdir yaml-build
+cd yaml-build
+cmake ../yaml-cpp-0.5.0 -DCMAKE_INSTALL_PREFIX=${installdir}
+make -j${nthreads} install
+
+
 
 # pginfo
 ########
@@ -37,10 +57,8 @@ mkdir pginfo-build
 cd pginfo-build
 cmake ../pginfo \
   -DCMAKE_INSTALL_PREFIX=${tooldir}/install \
-  -DYAMLCPP_INCLUDE_DIR=/scratch/jkeiren/local/include/yaml-cpp \
-  -DYAMLCPP_LIBRARY=/scratch/jkeiren/local/lib/libyaml-cpp.so \
-  -DBOOST_ROOT=/scratch/jkeiren/local/boost_1_52_0 \
-  -DBoost_INCLUDE_DIRS=/scratch/jkeiren/local/boost_1_52_0/stage/lib
+  -DYAMLCPP_INCLUDE_DIR=${installdir}/include/yaml-cpp \
+  -DYAMLCPP_LIBRARY=${installdir}/lib/libyaml-cpp.so 
 make -j${nthreads}
 cp pginfo ${tooldir}/install/bin
 
@@ -49,22 +67,20 @@ cp pginfo ${tooldir}/install/bin
 cd ${tooldir}
 wget http://www.mcrl2.org/download/release/mcrl2-201210.1.tar.gz
 tar -zxvf mcrl2-201210.1.tar.gz
-cd mcrl2-201210.1.tar.gz
-mkdir build
-cd build
-cmake .. -DCMAKE_INSTALL_PREFIX=${tooldir}/install \
+#cd mcrl2-201210.1
+mkdir mcrl2-build
+cd mcrl2-build
+cmake ../mcrl2-201210.1 -DCMAKE_INSTALL_PREFIX=${tooldir}/install \
   -DMCRL2_STAGE_ROOTDIR=`pwd`/stage \
   -DMCRL2_ENABLE_EXPERIMENTAL=ON \
   -DMCRL2_ENABLE_DEPRECATED=ON \
   -DMCRL2_ENABLE_GUI_TOOLS=OFF \
-  -DMCRL2_ENABLE_MAN_PAGES=OFF \
-  -DBOOST_ROOT=/scratch/jkeiren/local/boost_1_52_0
+  -DMCRL2_ENABLE_MAN_PAGES=OFF
 make install -j${nthreads}
 
 ## OCaml (needed for PGSolver)
 ##############################
-which ocamlc
-if [[ $? -eq 1 ]]; then
+if [[ ! `which ocamlc` ]]; then
   cd ${tooldir}
   wget http://caml.inria.fr/pub/distrib/ocaml-4.00/ocaml-4.00.1.tar.gz
   tar -zxvf ocaml-4.00.1.tar.gz
@@ -151,12 +167,30 @@ done
 cd ${bindir}
 wget https://www.dropbox.com/s/uh4d6gqb6ko4dbj/goal_2009_04_19.jar
 
+## Scala (needed for Gist)
+#
+# Note that we use version 2.9.2 here. 2.10.0 is the latest version, but gist
+# does not build with that version. Using 2.9.2 we need just two small patches.
+##########################
+if [[ ! `which scalac` ]]; then
+  cd ${tooldir}
+  wget http://www.scala-lang.org/downloads/distrib/files/scala-2.9.2.tgz
+  tar -zxvf scala-2.9.2.tgz
+  cd scala-2.9.2
+  ln -s ${tooldir}/scala-2.9.2/bin/fsc ${bindir}
+  ln -s ${tooldir}/scala-2.9.2/bin/scala ${bindir}
+  ln -s ${tooldir}/scala-2.9.2/bin/scalac ${bindir}
+  ln -s ${tooldir}/scala-2.9.2/bin/scaladoc ${bindir}
+  ln -s ${tooldir}/scala-2.9.2/bin/scalap ${bindir}
+fi
+
 # gist
 ######
 cd ${tooldir}
 wget https://www.dropbox.com/s/q9u1l0otcib038u/package.tar.gz
 tar -zxvf package.tar.gz
 mv ${tooldir}/tool ${tooldir}/gist
+cd gist
 
 sed -i "s|GOAL|${bindir}/goal_2009_04_19.jar|g" ${tooldir}/gist/src/specification/LTL.scala
 sed -i "s/JAVA/java/g" ${tooldir}/gist/src/specification/LTL.scala
@@ -167,6 +201,9 @@ sed -i "s/JAVA/java/g" ${tooldir}/gist/src/specification/BuchiAutomaton.scala
 sed -i "s|TEMP|/tmp|g" ${tooldir}/gist/src/specification/BuchiAutomaton.scala
 
 sed -i "s|PGSOLVER|${bindir}/pgsolver|g" ${tooldir}/gist/src/newgames/ParityGame.scala
+
+patch -p1 < ${tooldir}/gist.patch
+make
 
 echo "#!/bin/bash" > ${bindir}/gist
 for jar in ${tooldir}/gist/lib/*.jar; do
@@ -180,3 +217,4 @@ echo "  scala -howtorun:object gui.main" >> ${bindir}/gist
 echo "fi" >> ${bindir}/gist
 echo "cd -" >> ${bindir}/gist
 
+chmod +x ${bindir}/gist
