@@ -36,14 +36,12 @@ export LD_LIBRARY_PATH=${tooldir}/install/lib:$LD_LIBRARY_PATH
 # dependency of pginfo, not standard available on most platforms
 ################################################################
 cd ${tooldir}
-wget http://yaml-cpp.googlecode.com/files/yaml-cpp-0.5.0.tar.gz
-tar -zxvf yaml-cpp-0.5.0.tar.gz
-#cd yaml-cpp-0.5.0
+wget http://yaml-cpp.googlecode.com/files/yaml-cpp-0.3.0.tar.gz
+tar -zxvf yaml-cpp-0.3.0.tar.gz
 mkdir yaml-build
 cd yaml-build
-cmake ../yaml-cpp-0.5.0 -DCMAKE_INSTALL_PREFIX=${installdir}
+cmake ../yaml-cpp -DCMAKE_INSTALL_PREFIX=${installdir} -DBUILD_SHARED_LIBS=ON
 make -j${nthreads} install
-
 
 
 # pginfo
@@ -75,12 +73,14 @@ cmake ../mcrl2-201210.1 -DCMAKE_INSTALL_PREFIX=${tooldir}/install \
   -DMCRL2_ENABLE_EXPERIMENTAL=ON \
   -DMCRL2_ENABLE_DEPRECATED=ON \
   -DMCRL2_ENABLE_GUI_TOOLS=OFF \
-  -DMCRL2_ENABLE_MAN_PAGES=OFF
+  -DMCRL2_MAN_PAGES=OFF
 make install -j${nthreads}
 
 ## OCaml (needed for PGSolver)
 ##############################
+systemocaml=1
 if [[ ! `which ocamlc` ]]; then
+  systemocaml=0
   cd ${tooldir}
   wget http://caml.inria.fr/pub/distrib/ocaml-4.00/ocaml-4.00.1.tar.gz
   tar -zxvf ocaml-4.00.1.tar.gz
@@ -113,7 +113,11 @@ echo "" >> Config
 echo "#######" >> Config
 echo "# change this to the OCaml installation directory" >> Config
 echo "#######" >> Config
-echo "OCAML_DIR=${tooldir}/install/lib/ocaml" >> Config
+if [[ "${systemocaml}" -eq 1 ]]; then
+  echo "OCAML_DIR=/usr/lib/ocaml" >> Config
+else
+  echo "OCAML_DIR=${tooldir}/install/lib/ocaml" >> Config
+fi
 echo "" >> Config
 echo "" >> Config
 echo "#######" >> Config
