@@ -49,7 +49,7 @@ class PGCase(TempObj):
   def __collectInfo(self, pgfile):
     '''Reduce the PG modulo equiv using pgconvert.'''
     yamlfile = self._newTempFilename("yaml")
-    tools.pginfo('-v', pgfile, yamlfile)
+    tools.pginfo('-v', '-m', '30000', '-n', '2', pgfile, yamlfile)
     return yamlfile
 
   def phase0(self, log):
