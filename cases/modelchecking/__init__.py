@@ -92,8 +92,6 @@ class GameCase(Case):
     return tools.lpsconstelm('-ctvrjittyc' if self.__use_compiled_constelm else '-ctv', stdin=lps)
 
 def getcases():
-  return [Case('Debug spec')]
-
   return \
     [Case('Debug spec'),
      Case('Othello'),

@@ -26,8 +26,7 @@ def run(poolsize, resultsfile):
   pool = TaskPool(poolsize)
   try:
     tasks = []
-    #for task in modelchecking.getcases() + equivchecking.getcases() + pgsolver.getcases():
-    for task in modelchecking.getcases():
+    for task in modelchecking.getcases() + equivchecking.getcases() + pgsolver.getcases():
       if str(task) in casesdone:
         log.info('- ' + str(task))
       else:
