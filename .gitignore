@@ -1,0 +1,19 @@
+# Compiled python files
+*.pyc
+
+# vi temporary files
+*.swp
+
+# Downloaded packages on which we depend for the build
+tools/*.tar.gz
+tools/gist
+tools/install
+tools/mcrl2-*
+tools/mlsolver*
+tools/pginfo*
+tools/pgsolver*
+tools/yaml*
+
+# Project files
+.project
+.pydevproject
