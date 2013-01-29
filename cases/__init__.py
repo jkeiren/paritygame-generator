@@ -9,6 +9,7 @@ import pool
 import sys
 
 SOLVE_TIMEOUT = 3600
+RETURN_EXISTING = True
 
 class TempObj(pool.Task):
   def __init__(self):
@@ -18,11 +19,20 @@ class TempObj(pool.Task):
 
   def __escape(self, s):
     return s.replace('/', '_').replace(' ', '_')
-    
+  
+  def __name(self, ext, extraprefix=""):
+    return self._temppath + '/' + self.__escape(self._prefix) + extraprefix + '.' + ext
+  
+  def _existingTempFile(self, ext, extraprefix=""):
+    if os.path.exists(self.__name(ext, extraprefix)) and os.path.getsize(self.__name(ext, extraprefix)) > 0:
+      return self.__name(ext, extraprefix)
+    else:
+      return None
+  
   def _newTempFile(self, ext, extraprefix=""):
     if not os.path.exists(self._temppath):
       os.makedirs(self._temppath)
-    name = self._temppath + '/' + self.__escape(self._prefix) + extraprefix + '.' + ext
+    name = self.__name(ext, extraprefix)
     if self._prefix <> "" and not os.path.exists(name):
       fn = open(name, 'w+b')
       return fn
@@ -43,7 +53,7 @@ class PGCase(TempObj):
     self.__solvepg = None
     self.__solvebes = None
 
-  def _makePGfile(self, log):
+  def _makePGfile(self, log, overwriteExisting):
     raise NotImplementedError()
 
   def __collectInfo(self, pgfile):
@@ -53,7 +63,8 @@ class PGCase(TempObj):
     return yamlfile
 
   def phase0(self, log):
-    self.__pgfile = self._makePGfile(log)
+    global RETURN_EXISTING
+    self.__pgfile = self._makePGfile(log, RETURN_EXISTING)
     log.debug('Collecting information from {0}'.format(self))
     self.__collectInfo(self.__pgfile)
     
@@ -62,7 +73,12 @@ class PBESCase(PGCase):
   def _makePBES(self):
     raise NotImplementedError() 
     
-  def _makePGfile(self, _):
+  def _makePGfile(self, _, returnExisting):
+    # Optimisation: if file exists, return the existing file instead of the 
+    pgfile = self._existingTempFile('gm')
+    if pgfile and returnExisting:
+      return pgfile
+    
     pbes = self._newTempFile('pbes')
     pbes.write(self._makePBES())
     pbes.close()
