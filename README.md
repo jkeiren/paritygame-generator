@@ -22,6 +22,7 @@ make sure that the following tools can be found in the `$PATH`.
 * `lps2lts`
 * `lps2pbes`
 * `mcrl22lps`
+* `mlsolver`
 * `pbes2bes`
 * `pginfo`
 * `pgsolver`
