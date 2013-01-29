@@ -20,19 +20,19 @@ class TempObj(pool.Task):
   def __escape(self, s):
     return s.replace('/', '_').replace(' ', '_')
   
-  def __name(self, ext, extraprefix=""):
+  def _name(self, ext, extraprefix=""):
     return self._temppath + '/' + self.__escape(self._prefix) + extraprefix + '.' + ext
   
   def _existingTempFile(self, ext, extraprefix=""):
-    if os.path.exists(self.__name(ext, extraprefix)) and os.path.getsize(self.__name(ext, extraprefix)) > 0:
-      return self.__name(ext, extraprefix)
+    if os.path.exists(self._name(ext, extraprefix)) and os.path.getsize(self._name(ext, extraprefix)) > 0:
+      return self._name(ext, extraprefix)
     else:
       return None
   
   def _newTempFile(self, ext, extraprefix=""):
     if not os.path.exists(self._temppath):
       os.makedirs(self._temppath)
-    name = self.__name(ext, extraprefix)
+    name = self._name(ext, extraprefix)
     if self._prefix <> "" and not os.path.exists(name):
       fn = open(name, 'w+b')
       return fn
@@ -58,7 +58,15 @@ class PGCase(TempObj):
 
   def __collectInfo(self, pgfile):
     '''Reduce the PG modulo equiv using pgconvert.'''
-    yamlfile = self._newTempFilename("yaml")
+    global RETURN_EXISTING
+    
+    if RETURN_EXISTING:
+      yamlfile = self._name("yaml")
+      if os.path.exists(yamlfile) and os.path.getsize(yamlfile) > 0:
+          yamlfile = self._newTempFilename("yaml")
+    else:
+      yamlfile = self._newTempFilename("yaml")
+
     tools.pginfo('-v', '-m', '30000', '-n', '2', pgfile, yamlfile)
     return yamlfile
 
