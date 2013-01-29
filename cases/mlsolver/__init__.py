@@ -29,19 +29,19 @@ class Case(PGCase):
 
 def getcases():
   return \
-    [Case('Include', n=2)] +\
-    [Case('Nester', n=2)] + \
-    [Case('StarNester', k=i,n=2) for i in range(1,4)] + \
-    [Case('Petri', n=2)] + \
-    [Case('ParityAndBuechi', n=2)] + \
+    [Case('Include', n=n) for n in range(1,9)] +\
+    [Case('Nester', n=n) for n in range(1,9)] + \
+    [Case('StarNester', k=k,n=n) for k in range(1,4) for n in range(1,9)] + \
+    [Case('Petri', n=n) for n in range(1,9)] + \
+    [Case('ParityAndBuechi', n=n) for n in range(1,9)] + \
     [Case('MuCalcLimitClosure', n=0,phi="p")] + \
-    [Case('CTLLimitClosure', phi="p")] + \
-    [Case('CTLStarLimitClosure', phi="G(~q_1)", psi="q_3 & X q_2")] + \
-    [Case('CTLStarSimpleLimitClosure', phi="q_3 & X q_2")] + \
-    [Case('DemriKillerFormula', n=2)] + \
-    [Case('FairScheduler', n=2)] + \
-    [Case('LTMucalcBinaryCounter', n=2)] + \
-    [Case('CTLStarBinaryCounter', n=2)] + \
-    [Case('PDLBinaryCounter', n=2)] + \
-    [Case('HugeModels', n=1)]
+    [Case('FLCTLLimitClosure', n=n) for n in range(1,9)] + \
+    [Case('FLCTLStarLimitClosure', n=n) for n in range(1,5)] + \
+    [Case('FLCTLStarSimpleLimitClosure', n=n) for n in range(1,9)] + \
+    [Case('DemriKillerFormula', n=n) for n in range(1,4)] + \
+    [Case('FairScheduler', n=n) for n in range(1,9)] + \
+    [Case('LTMucalcBinaryCounter', n=n) for n in range(1,9)] + \
+    [Case('CTLStarBinaryCounter', n=n) for n in range(1,9)] + \
+    [Case('PDLBinaryCounter', n=n) for n in range(1,9)] + \
+    [Case('HugeModels', n=n) for n in range(1,5)]
 
