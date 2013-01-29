@@ -151,6 +151,21 @@ for f in ${tooldir}/pgsolver/bin/*; do
   ln -s ${f} ${tooldir}/install/bin
 done
 
+# MLSolver
+##########
+cd ${tooldir}
+wget https://www.dropbox.com/s/ivxdpn6hqxduwuj/mlsolver.tgz
+tar -zxvf mlsolver.tgz
+cd ${tooldir}/mlsolver
+cp ${tooldir}/pgsolver/Config Config
+cp Config TCSlib/config
+
+make all
+
+for f in ${tooldir}/mlsolver/bin/*; do
+  ln -s ${f} ${tooldir}/install/bin
+done
+
 # This is for new version of GOAL
 # However, gist seems to need an older version.
 #cd $tooldir

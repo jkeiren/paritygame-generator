@@ -3,7 +3,7 @@ import logging
 import yaml
 import sys
 import os
-from cases import modelchecking, equivchecking, pgsolver
+from cases import modelchecking, equivchecking, pgsolver, mlsolver
 from cases.pool import TaskPool 
 
 def run(poolsize, resultsfile):
@@ -26,14 +26,14 @@ def run(poolsize, resultsfile):
   pool = TaskPool(poolsize)
   try:
     tasks = []
-    for task in modelchecking.getcases() + equivchecking.getcases() + pgsolver.getcases():
+    for task in mlsolver.getcases() + modelchecking.getcases() + equivchecking.getcases() + pgsolver.getcases():
       if str(task) in casesdone:
         log.info('- ' + str(task))
       else:
         tasks.append(task)
     log.info('Submitting cases and waiting for results.')
     for case in pool.run(*tasks):
-      if isinstance(case, (modelchecking.Case, equivchecking.Case, pgsolver.Case)):
+      if isinstance(case, (modelchecking.Case, equivchecking.Case, pgsolver.Case, mlsolver.Case)):
         log.info('Got result for {0}'.format(case))
         resultsfile.write(yaml.dump([str(case)], default_flow_style = False))
         resultsfile.flush()

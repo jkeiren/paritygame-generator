@@ -116,6 +116,7 @@ besconvert = Tool('besconvert', __LOG)
 bestranslate = Tool('bestranslate', __LOG)
 ltsinfo = Tool('ltsinfo', __LOG)
 pgsolver = Tool('pgsolver', __LOG)
+mlsolver = Tool('mlsolver', __LOG)
 PGCONVERT_RE = 'Parity game contains (?P<vorig>\d+) nodes and (?P<eorig>\d+) edges\..*?Parity game contains (?P<vred>\d+) nodes and (?P<ered>\d+) edges after[^[]*$'
 pgconvert = Tool('pgconvert', __LOG, filter_=PGCONVERT_RE)
 transformer = Tool('transformer', __LOG)
