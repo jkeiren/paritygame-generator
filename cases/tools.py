@@ -27,9 +27,16 @@ class Timeout(Exception):
     self.out = out
     self.err = err
     
-class MemoryLimitExceeded(ToolException):
-  def __init__(self, tool, exitcode, out, err):
-    super(MemoryLimitExceeded, self).__init__(self, tool, out, err)
+class MemoryLimitExceeded(Exception):
+  def __init__(self, tool, out, err):
+    Exception.__init__(self)
+    self.__out = out
+    self.__err = err
+    self.__cmdline = ' '.join(tool)
+
+  def __str__(self):
+    return 'The commandline "{0}" failed with an out of memory error.\nStandard error:\n{1}\nStandard output:\n{2}\n'.format(
+      self.__cmdline, self.__err, self.__out)
 
 def setlimits(memlimit):
   if memlimit != None:
@@ -48,8 +55,6 @@ class Tool(object):
     
   def __run(self, stdin, stdout, stderr, timeout, memlimit, *args):
     cmdline = []
-    #if memlimit:
-    #  cmdline += ['ulimit', '-v', '{0};'.format(memlimit)]
     cmdline += [self.__name] + [str(x) for x in args]
     self.__log.info('Running {0}'.format(' '.join(cmdline)))
     try:
