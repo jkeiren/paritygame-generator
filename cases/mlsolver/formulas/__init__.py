@@ -174,7 +174,6 @@ class ParityAndBuechiSpec(Spec):
     
   def __forallgreateroddfinitelyoften(self,n,i):
     assert(i >= 0)
-    print (n,i)
     if i > n:
       return "tt"
     elif i % 2 == 1:
