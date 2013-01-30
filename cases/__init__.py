@@ -9,6 +9,8 @@ import pool
 import sys
 
 SOLVE_TIMEOUT = 3600
+MEMLIMIT = 128*1024*1024*1024 # memory limit in bytes
+LPSTOOLS_MEMLIMIT = 8*1024*1024*1024
 RETURN_EXISTING = True
 
 class TempObj(pool.Task):
@@ -58,8 +60,6 @@ class PGCase(TempObj):
 
   def __collectInfo(self, pgfile):
     '''Reduce the PG modulo equiv using pgconvert.'''
-    global RETURN_EXISTING
-    
     if RETURN_EXISTING:
       yamlfile = self._name("yaml")
       if os.path.exists(yamlfile) and os.path.getsize(yamlfile) > 0:
@@ -67,11 +67,10 @@ class PGCase(TempObj):
     else:
       yamlfile = self._newTempFilename("yaml")
 
-    tools.pginfo('-v', '-m', '30000', '-n', '2', pgfile, yamlfile)
+    tools.pginfo('-v', '-m', '30000', '-n', '2', pgfile, yamlfile, memlimit=MEMLIMIT)
     return yamlfile
 
   def phase0(self, log):
-    global RETURN_EXISTING
     self.__pgfile = self._makePGfile(log, RETURN_EXISTING)
     log.debug('Collecting information from {0}'.format(self))
     self.__collectInfo(self.__pgfile)
@@ -91,7 +90,7 @@ class PBESCase(PGCase):
     pbes.write(self._makePBES())
     pbes.close()
     pgfile = self._newTempFilename('gm')
-    tools.pbes2bes('-s0', '-v', '-rjittyc', '-opgsolver', pbes.name, pgfile)
+    tools.pbes2bes('-s0', '-v', '-rjittyc', '-opgsolver', pbes.name, pgfile, memlimit=MEMLIMIT)
     os.unlink(pbes.name)
     return pgfile
 

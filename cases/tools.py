@@ -5,6 +5,7 @@ import threading
 import yaml
 import os
 import re
+import resource
 
 __LOG = logging.getLogger('tools')
 
@@ -25,39 +26,58 @@ class Timeout(Exception):
     super(Timeout, self).__init__()
     self.out = out
     self.err = err
+    
+class MemoryLimitExceeded(ToolException):
+  def __init__(self, tool, exitcode, out, err):
+    super(MemoryLimitExceeded, self).__init__(self, tool, out, err)
+
+def setlimits(memlimit):
+  if memlimit != None:
+    resource.setrlimit(resource.RLIMIT_AS, (memlimit,memlimit))
 
 class Tool(object):
-  def __init__(self, name, log, filter_=None, timed=False, timeout=None):
+  def __init__(self, name, log, filter_=None, timed=False, timeout=None, memlimit=None):
     self.__name = name
     self.__log = log
-    self.__timeout = timeout 
+    self.__timeout = timeout
+    self.__memlimit = memlimit 
     self.__filter = filter_
     self.__timed = timed
     self.result = None
     self.error = None
-  
-  def __run(self, stdin, stdout, stderr, timeout, *args):
-    cmdline = [self.__name] + [str(x) for x in args]
+    
+  def __run(self, stdin, stdout, stderr, timeout, memlimit, *args):
+    cmdline = []
+    #if memlimit:
+    #  cmdline += ['ulimit', '-v', '{0};'.format(memlimit)]
+    cmdline += [self.__name] + [str(x) for x in args]
     self.__log.info('Running {0}'.format(' '.join(cmdline)))
-    p = subprocess.Popen(cmdline, stdin=subprocess.PIPE, stdout=stdout, 
-                         stderr=stderr)
-    if timeout is not None:
-      timer = threading.Timer(timeout, p.kill)
-      timer.start()
-      self.result, self.error = p.communicate(stdin)
-      if not timer.isAlive():
-        raise Timeout(self.result, self.error)
-      else: 
-        timer.cancel()
-    else:
-      self.result, self.error = p.communicate(stdin)
-    if p.returncode != 0:
-      raise ToolException(cmdline, p.returncode, self.result, self.error)      
+    try:
+      p = subprocess.Popen(cmdline, stdin=subprocess.PIPE, stdout=stdout, 
+                           stderr=stderr, preexec_fn=setlimits(memlimit))
+      if timeout is not None:
+        timer = threading.Timer(timeout, p.kill)
+        timer.start()
+        self.result, self.error = p.communicate(stdin)
+        if not timer.isAlive():
+          raise Timeout(self.result, self.error)
+        else: 
+          timer.cancel()
+      else:
+        self.result, self.error = p.communicate(stdin)
+      
+      if p.returncode != 0:
+        raise ToolException(cmdline, p.returncode, self.result, self.error)
+           
+    except (ToolException, Timeout) as e:
+      raise e
+    except:
+      raise MemoryLimitExceeded(cmdline, self.result, self.error) 
   
-  def __run_timed(self, stdin, stdout, stderr, timeout, *args):
+  def __run_timed(self, stdin, stdout, stderr, timeout, memlimit, *args):
     timings = tempfile.NamedTemporaryFile(suffix='.yaml', delete=False)
     timings.close()
-    self.__run(stdin, stdout, stderr, timeout, '--timings='+timings.name, *args)
+    self.__run(stdin, stdout, stderr, timeout, memlimit, '--timings='+timings.name, *args)
     t = yaml.load(open(timings.name).read())
     os.unlink(timings.name)
     self.result = [self.result, t]
@@ -87,15 +107,16 @@ class Tool(object):
     stderr = kwargs.pop('stderr', subprocess.PIPE)
     filter_ = kwargs.pop('filter', self.__filter)
     timeout = kwargs.pop('timeout', self.__timeout)
+    memlimit = kwargs.pop('memlimit', self.__memlimit)
     timed = kwargs.pop('timed', self.__timed)
     if kwargs:
       raise TypeError('Unknown parameter(s) for Tool instance: ' + 
                       ', '.join(['{0}={1}'.format(k, v) 
                                  for k, v in kwargs.items()]))
     if timed:
-      self.__run_timed(stdin, stdout, stderr, timeout, *args)
+      self.__run_timed(stdin, stdout, stderr, timeout, memlimit, *args)
     else:
-      self.__run(stdin, stdout, stderr, timeout, *args)
+      self.__run(stdin, stdout, stderr, timeout, memlimit, *args)
     self.__log.debug(self.error)
     if filter_:
       self.__apply_filter(filter_)

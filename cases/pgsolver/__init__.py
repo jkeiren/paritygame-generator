@@ -1,5 +1,5 @@
 import os
-from cases import PGCase, tools
+from cases import PGCase, tools, MEMLIMIT
 
 class Case(PGCase):
   def __init__(self, generator, *args):
@@ -13,7 +13,7 @@ class Case(PGCase):
   
   def _makePGfile(self, log):
     pgfile = self._newTempFile('gm')
-    pgfile.write(tools.Tool(self.__generator, log)(*self.__args))
+    pgfile.write(tools.Tool(self.__generator, log, memlimit=MEMLIMIT)(*self.__args))
     pgfile.close()
     return pgfile.name
 

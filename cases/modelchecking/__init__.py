@@ -1,4 +1,4 @@
-from cases import tools, TempObj, PBESCase
+from cases import tools, TempObj, PBESCase,MEMLIMIT,LPSTOOLS_MEMLIMIT
 import specs
 import os.path
 import logging
@@ -25,13 +25,13 @@ class Property(PBESCase):
     '''If a lpsactionrename specification exists for this property, transform
        the LPS.'''
     if os.path.exists(self.renfile):
-      self.lps = tools.lpsactionrename('-f', self.renfile, '-v', stdin=self.lps)
+      self.lps = tools.lpsactionrename('-f', self.renfile, '-v', stdin=self.lps, memlimit=LPSTOOLS_MEMLIMIT)
   
   def _makePBES(self):
     '''Generate a PBES out of self.lps and self.mcffile, and apply pbesconstelm
        to it.'''
     self.__rename()
-    return tools.pbesconstelm('-v', stdin=tools.lps2pbes('-f', self.mcffile, '-v', stdin=self.lps))
+    return tools.pbesconstelm('-v', stdin=tools.lps2pbes('-f', self.mcffile, '-v', stdin=self.lps, memlimit=LPSTOOLS_MEMLIMIT))
 
 class Case(TempObj):
   def __init__(self, name, **kwargs):
@@ -51,7 +51,7 @@ class Case(TempObj):
   def _makeLPS(self, log):
     '''Linearises the specification in self._mcrl2.'''
     log.debug('Linearising {0}'.format(self))
-    return tools.mcrl22lps('-fvD', stdin=self._mcrl2)
+    return tools.mcrl22lps('-fvD', stdin=self._mcrl2, memlimit=LPSTOOLS_MEMLIMIT)
 
   def phase0(self, log):
     '''Generates an LPS and creates subtasks for every property that should be
@@ -70,7 +70,7 @@ class IEEECase(Case):
     log.debug('Linearising {0}'.format(self))
     lps = tools.mcrl22lps('-vD', stdin=self._mcrl2)
     log.debug('Applying suminst on LPS of {0}'.format(self))
-    return tools.lpssuminst(stdin=lps)
+    return tools.lpssuminst(stdin=lps, memlimit=LPSTOOLS_MEMLIMIT)
 
 class GameCase(Case):
   def __init__(self, name, boardsize=4, use_compiled_constelm=False, **kwargs):
@@ -81,15 +81,15 @@ class GameCase(Case):
     '''Linearises the specification in self._mcrl2 and applies lpssuminst,
     lpsparunfold and lpsconstelm to the result.'''
     log.debug('Linearising {0}'.format(self))
-    lps = tools.mcrl22lps('-vfD', stdin=self._mcrl2)
+    lps = tools.mcrl22lps('-vfD', stdin=self._mcrl2, memlimit=LPSTOOLS_MEMLIMIT)
     log.debug('Applying suminst on LPS of {0}'.format(self))
-    lps = tools.lpssuminst(stdin=lps)
+    lps = tools.lpssuminst(stdin=lps, memlimit=LPSTOOLS_MEMLIMIT)
     log.debug('Applying parunfold (for Board) on LPS of {0}'.format(self))
-    lps = tools.lpsparunfold('-lv', '-n{0}'.format(self.__boardsize), '-sBoard', stdin=lps)
+    lps = tools.lpsparunfold('-lv', '-n{0}'.format(self.__boardsize), '-sBoard', stdin=lps, memlimit=LPSTOOLS_MEMLIMIT)
     log.debug('Applying parunfold (for Row) on LPS of {0}'.format(self))
-    lps = tools.lpsparunfold('-lv', '-n{0}'.format(self.__boardsize), '-sRow', stdin=lps)
+    lps = tools.lpsparunfold('-lv', '-n{0}'.format(self.__boardsize), '-sRow', stdin=lps, memlimit=LPSTOOLS_MEMLIMIT)
     log.debug('Applying constelm on LPS of {0}'.format(self))
-    return tools.lpsconstelm('-ctvrjittyc' if self.__use_compiled_constelm else '-ctv', stdin=lps)
+    return tools.lpsconstelm('-ctvrjittyc' if self.__use_compiled_constelm else '-ctv', stdin=lps, memlimit=LPSTOOLS_MEMLIMIT)
 
 def getcases():
   return \
