@@ -17,7 +17,9 @@ def run(poolsize, resultsfile):
         casesdone = yaml.load(open(resultsfile).read())
         if casesdone:
           log.info('Skipping the following cases because results for them were found:')
-      except AttributeError:
+        else:
+          casesdone = []
+      except (AttributeError, TypeError):
         pass
     resultsfile = open(resultsfile, 'a+')
   else:
