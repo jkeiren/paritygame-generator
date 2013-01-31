@@ -210,6 +210,9 @@ class ParityAndBuechiSpec(Spec):
     return "(({0}) ==> (({1}) <==> ({2})))".format(self.__alwaysjustoneq(n), self.__paritycondition(n,n), self.__existseveninfpriority(n,n))
 
 class LimitClosureSpec(Spec):
+  def __init__(self, ctl):
+    self.__ctl = ctl
+  
   def mode(self):
     return "validity"
   
@@ -220,9 +223,9 @@ class LimitClosureSpec(Spec):
     if n == 0:
       return "q_0"
     elif n % 2 == 1:
-      return "(q_{0} & (X {1}))".format(n, self._psi(n-1))
+      return "(q_{0} & ({1} X {2}))".format(n, "E" if self.__ctl else "", self._psi(n-1))
     else:
-      return "(q_{0} | (X {1}))".format(n, self._psi(n-1))
+      return "(q_{0} | ({1} X {2}))".format(n, "E" if self.__ctl else "", self._psi(n-1))
 
 # Here we do not use the limit closure spec above, since that is tailored to
 # CTL derived 
@@ -237,6 +240,9 @@ class MuCalcLimitClosureSpec(Spec):
     return "((nu X_{0} . (({1} ==> <> {1}) & []X_{0})) ==> ({1} ==> (nu Y_{0}. ({1} & <>Y_{0}))))".format(n, phi)
   
 class CTLLimitClosureSpec(LimitClosureSpec):
+  def __init__(self):
+    super(CTLLimitClosureSpec, self).__init__(True)
+    
   def type(self):
     return "ctl"
   
@@ -251,6 +257,9 @@ class FLCTLLimitClosureSpec(CTLLimitClosureSpec):
     return self._limitclosure(self._psi(n))
 
 class CTLStarLimitClosureSpec(LimitClosureSpec):
+  def __init__(self):
+    super(CTLStarLimitClosureSpec, self).__init__(False)
+  
   def type(self):
     return "ctlstar"
   
@@ -261,14 +270,23 @@ class CTLStarLimitClosureSpec(LimitClosureSpec):
     return self._ctlstarlimitclosure(phi, psi)
   
 class FLCTLStarLimitClosureSpec(CTLStarLimitClosureSpec):
+  def __init__(self):
+    super(FLCTLStarLimitClosureSpec, self).__init__()
+    
   def form(self, n):
     return self._ctlstarlimitclosure(self._phi(n), self._psi(n))
   
 class CTLStarSimpleLimitClosureSpec(CTLStarLimitClosureSpec):
+  def __init__(self):
+    super(CTLStarSimpleLimitClosureSpec, self).__init__()
+    
   def form(self, phi):
     return self._ctlstarlimitclosure("tt", phi)
 
 class FLCTLStarSimpleLimitClosureSpec(CTLStarSimpleLimitClosureSpec):
+  def __init__(self):
+    super(FLCTLStarSimpleLimitClosureSpec, self).__init__()
+    
   def form(self, n):
     return self._ctlstarlimitclosure("tt", self._phi(n))
   
