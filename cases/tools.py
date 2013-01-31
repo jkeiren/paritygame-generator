@@ -8,6 +8,7 @@ import re
 import resource
 
 __LOG = logging.getLogger('tools')
+logging.raiseExceptions = False
 
 class ToolException(Exception):
   def __init__(self, tool, exitcode, out, err):
@@ -57,28 +58,23 @@ class Tool(object):
     cmdline = []
     cmdline += [self.__name] + [str(x) for x in args]
     self.__log.info('Running {0}'.format(' '.join(cmdline)))
-    try:
-      p = subprocess.Popen(cmdline, stdin=subprocess.PIPE, stdout=stdout, 
-                           stderr=stderr, preexec_fn=setlimits(memlimit))
-      if timeout is not None:
-        timer = threading.Timer(timeout, p.kill)
-        timer.start()
-        self.result, self.error = p.communicate(stdin)
-        if not timer.isAlive():
-          raise Timeout(self.result, self.error)
-        else: 
-          timer.cancel()
-      else:
-        self.result, self.error = p.communicate(stdin)
-      
-      if p.returncode != 0:
-        raise ToolException(cmdline, p.returncode, self.result, self.error)
-           
-    except (ToolException, Timeout) as e:
-      raise e
-    except:
-      raise MemoryLimitExceeded(cmdline, self.result, self.error) 
-  
+
+    p = subprocess.Popen(cmdline, stdin=subprocess.PIPE, stdout=stdout, 
+                         stderr=stderr, preexec_fn=setlimits(memlimit))
+    if timeout is not None:
+      timer = threading.Timer(timeout, p.kill)
+      timer.start()
+      self.result, self.error = p.communicate(stdin)
+      if not timer.isAlive():
+        raise Timeout(self.result, self.error)
+      else: 
+        timer.cancel()
+    else:
+      self.result, self.error = p.communicate(stdin)
+    
+    if p.returncode != 0:
+      raise ToolException(cmdline, p.returncode, self.result, self.error)
+            
   def __run_timed(self, stdin, stdout, stderr, timeout, memlimit, *args):
     timings = tempfile.NamedTemporaryFile(suffix='.yaml', delete=False)
     timings.close()
@@ -156,3 +152,12 @@ towersofhanoi = Tool('towersofhanoi', __LOG)
 towersofhanoi_alt = Tool('towersofhanoi_alt', __LOG)
 elevatorverification = Tool('elevatorverification', __LOG)
 elevatorverification_alt = Tool('elevatorverification_alt', __LOG)
+cliquegame = Tool('cliquegame', __LOG)
+clusteredrandomgame = Tool('clusteredrandomgame', __LOG)
+jurdzinskigame = Tool('jurdzinskigame', __LOG)
+laddergame = Tool('laddergame', __LOG)
+modelcheckerladder = Tool('modelcheckerladder', __LOG)
+randomgame = Tool('randomgame', __LOG)
+recursiveladder = Tool('recursiveladder', __LOG)
+steadygame = Tool('steadygame', __LOG)
+
