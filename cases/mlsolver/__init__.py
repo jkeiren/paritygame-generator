@@ -2,6 +2,8 @@ from cases import tools, TempObj, PGCase
 import formulas
 import os
 
+MLSOLVER_TIMEOUT=3600
+
 class MLSolverCase(PGCase):
   def __init__(self, name, compact, **kwargs):
     super(MLSolverCase, self).__init__()
@@ -23,9 +25,9 @@ class MLSolverCase(PGCase):
     
     pgfilename = self._newTempFilename('gm')
     if self.__compact:
-      pg = tools.mlsolver('-ve', '--option', 'comp', '--{0}'.format(self.formula.mode()), self.formula.type(), '-pg', self.formula.form(**self.__kwargs))
+      pg = tools.mlsolver('-ve', '--option', 'comp', '--{0}'.format(self.formula.mode()), self.formula.type(), '-pg', self.formula.form(**self.__kwargs), timeout=MLSOLVER_TIMEOUT)
     else:
-      pg = tools.mlsolver('-ve', '--{0}'.format(self.formula.mode()), self.formula.type(), '-pg', self.formula.form(**self.__kwargs))
+      pg = tools.mlsolver('-ve', '--{0}'.format(self.formula.mode()), self.formula.type(), '-pg', self.formula.form(**self.__kwargs), timeout=MLSOLVER_TIMEOUT)
     pgfile = open(pgfilename, 'w')
     pgfile.write(pg)
     pgfile.close()
