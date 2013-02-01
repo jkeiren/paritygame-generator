@@ -1,0 +1,124 @@
+% This is a model of Peterson's mutual exclusion algorithm in the version
+% presented in A. Mader. "Verification of Modal Properties Using Boolean
+% Equation Systems". PhD Thesis. 1997.
+%
+% Note that this model could be presented in a nicer way using data
+% in mCRL2, we refrain from this to stick to the original presentation.
+%
+% We present both the busy wait and the non-busy wait version as described in
+% ibid. We immediately present the version that includes probes to show
+% the processes that are involved in variable accesses.
+%
+% Jeroen Keiren 1 February 2013.
+
+% Choose between busy wait and (non-busy) wait version.
+map busyWait: Bool;
+eqn busyWait = true;
+
+% Choose one of three versions presented by Mader, in her thesis referred to
+% as Peterson1, Peterson2 and Peterson3, differing in the, so called, probes
+% that are included in the process.
+map version: Nat;
+eqn version = 3;
+
+proc P1 =
+  ((version == 1) -> (req1 . b1wt . kw2 . P11
+                   + tau . P1))
++ ((version == 2) -> (req1 . b1wt . b11 . kw2 . k1 . P11
+                   + tau . P1))
++ ((version == 3) -> (req1 . b1wt . b11w . kw2 . k1 . P11
+                   + tau . P1));
+        
+proc P11 = 
+  ((version == 1) -> (b2rf . P12
+                   + (busyWait) -> b2rt . (kr2 . P11 + kr1 . P12)
+                   + (!busyWait) -> kr1 . P12))
++ ((version == 2) -> (b2rf . b21 . P12
+                   + (busyWait) -> b2rt . b21 . (kr2 . k1 . P11 + kr1 . k1 . P12)
+                   + (!busyWait) -> kr1 . k1 . P12))
++ ((version == 3) -> (b2rf . b21r . P12
+                   + (busyWait) -> b2rt . b21r . (kr2 . k1 . P11 + kr1 . k1 . P12)
+                   + (!busyWait) -> kr1 . k1 . P12));
+
+proc P12 = 
+   ((version == 1) -> (enter1. exit1 . b1wf . P1))
+ + ((version == 2) -> (enter1. exit1 . b1wf . b11 . P1))  
+ + ((version == 3) -> (enter1. exit1 . b1wf . b11w . P1));
+
+proc P2 = 
+   ((version == 1) -> (req2 . b2wt . kw1 . P21
+                    + tau . P2))
+ + ((version == 2) -> (req2 . b2wt . b22 . kw1 . k2 . P21
+                    + tau . P2))
+ + ((version == 3) -> (req2 . b2wt . b22w . kw1 . k2 . P21
+                    + tau . P2));
+        
+proc P21 = 
+   ((version == 1) -> (b1rf . P22
+                    + (busyWait) -> b1rt . (kr1 . P21 + kr2 . P22)
+                    + (!busyWait) -> kr2. P22))
+ + ((version == 2) -> (b1rf . b12 . P22
+                    + (busyWait) -> b1rt . b12 . (kr1 . k2 . P21 + kr2 . k2 . P22)
+                    + (!busyWait) -> kr2. k2 . P22))
+ + ((version == 3) -> (b1rf . b12r . P22
+                    + (busyWait) -> b1rt . b12r . (kr1 . k2 . P21 + kr2 . k2 . P22)
+                    + (!busyWait) -> kr2. k2 . P22));
+                             
+proc P22 = 
+   ((version == 1) -> (enter2 . exit2 . b2wf . P2))
+ + ((version == 2) -> (enter2 . exit2 . b2wf . b22 . P2))
+ + ((version == 3) -> (enter2 . exit2 . b2wf . b22w . P2));
+
+% Variables are modelled by process agents
+% Each process p has a Boolean variable Bp,
+% that can be written or read.
+% The action b1rf, e.g., denotes reading value false of B1, b1wt means
+% setting B1 to true.
+proc B1f = b1rf'.B1f
+         + b1wf'.B1f
+         + b1wt'.B1f;
+    
+proc B1t = b1rt'.B1t
+         + b1wt'.B1t
+         + b1wf'.B1f;
+    
+proc B2f = b2rf'.B2f
+         + b2wf'.B2f
+         + b2wt'.B2t;
+    
+proc B2t = b2rt'.B2t
+         + b2wt'.B2t
+         + b2wf'.B2f;
+ 
+% Both processes read and write to variable k, that can contain values
+% 1 or 2, and is represented by the process Ki below.
+proc K1 = kr1' . K1
+        + kw1' . K1
+        + kw2' . K2;
+   
+proc K2 = kr2' . K2
+        + kw2' . K2
+        + kw1' . K1;
+
+act b1rf,b1rf',b1rf'',b1rt,b1rt',b1rt'',b1wf,b1wf',b1wf'',b1wt,b1wt',b1wt'';
+    b2rf,b2rf',b2rf'',b2rt,b2rt',b2rt'',b2wf,b2wf',b2wf'',b2wt,b2wt',b2wt'';
+    kr1,kr1',kr1'',kr2,kr2',kr2'',kw1,kw1',kw1'',kw2,kw2',kw2'';
+    req1,req2,exit1,exit2,enter1,enter2;
+    % probes
+    b11, b12, b21, b22, k1, k2;
+    b11w,b21r,b12r,b22w;
+   
+proc Peterson = hide( {b1rf'',b1wf'',b1wt'',b1rt'',b2rf'',b2wf'',b2rt'',b2wt'',kr1'',
+                        kr2'',kw1'',kw2''},
+                allow({b1rf'',b1wf'',b1wt'',b1rt'',b2rf'',b2wf'',b2rt'',b2wt'',kr1'',
+                        kr2'',kw1'',kw2'',
+                        enter1,exit1,enter2,exit2,req1,req2,
+%                        b11, b12, b21, b22,
+                        k1, k2,
+                        b11w,b21r,b12r,b22w},
+                comm({b1rf|b1rf'->b1rf'',b1rt|b1rt'->b1rt'',b1wf|b1wf'->b1wf'',b1wt|b1wt'->b1wt'',
+                      b2rf|b2rf'->b2rf'',b2rt|b2rt'->b2rt'',b2wf|b2wf'->b2wf'',b2wt|b2wt'->b2wt'',
+                      kr1|kr1'->kr1'', kr2|kr2'->kr2'', kw1|kw1'->kw1'', kw2|kw2'->kw2''}
+                     , (P1 || P2 || K1 || B1f || B2f))));
+
+init Peterson;                     

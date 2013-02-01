@@ -1,0 +1,29 @@
+% Property from Mader, see specification for details
+%
+% If a process wishes to enter the critical section, then it
+% eventually may do so, if we require progress for all
+% variables.
+% Here we show the property for process 1.
+%
+% This is still does not hold, as described by Mader.
+  
+nu Z . [true]Z && [req1]
+(
+mu X . (
+   [true]X || <enter1>true
+|| (nu Y . <tau . b11>true && [b11 || b12]X && [!(b11 || b12)](X || Y))
+|| (nu Y . <tau . b12>true && [b11 || b12]X && [!(b11 || b12)](X || Y))
+|| (nu Y . <tau . b21>true && [b21 || b22]X && [!(b21 || b22)](X || Y))
+|| (nu Y . <tau . b22>true && [b21 || b22]X && [!(b21 || b22)](X || Y))
+|| (nu Y . <tau . k1>true && [k1 || k2]X && [!(k1 || k2)](X || Y))
+|| (nu Y . <tau . k2>true && [k1 || k2]X && [!(k1 || k2)](X || Y))
+|| (nu Y . <enter2>true && [enter2]X && [!enter2](X || Y))
+|| (nu Y . <exit2>true && [exit2]X && [!exit2](X || Y))
+|| (<b11>true && [b11]X)
+|| (<b21>true && [b21]X)
+|| (<b12>true && [b12]X)
+|| (<b22>true && [b22]X)
+|| (<k1>true && [k1]X)
+|| (<k2>true && [k2]X)
+)
+)

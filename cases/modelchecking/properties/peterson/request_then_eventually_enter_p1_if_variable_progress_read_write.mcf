@@ -1,0 +1,32 @@
+% Property from Mader, see specification for details
+%
+% If a process wishes to enter the critical section, then it
+% eventually may do so, if we require progress for all
+% variables.
+% Here we show the property for process 1.
+%
+% This does not hold for Peterson versions 1,2,3
+% However, Mader claims it holds for version 3, due to a mistake
+% in the formula as she presents it. ([b22w](X||Y) instead
+% of [!b22w](X||Y).
+
+nu Z . [true]Z && [req1]
+(
+mu X . (
+   [true]X || <enter1>true
+|| (nu Y . <tau . b11w>true && [b11w]X         && [!b11w](X || Y))
+|| (nu Y . <tau . b12r>true && [b11w || b12r]X && [!(b11w || b12r)](X || Y))
+|| (nu Y . <tau . b21r>true && [b21r || b22w]X && [!(b21r || b22w)](X || Y))
+|| (nu Y . <tau . b22w>true && [b22w]X         && [!b22w](X || Y))
+|| (nu Y . <tau . k1>true && [k1]X && [!k1](X || Y))
+|| (nu Y . <tau . k2>true && [k2]X && [!k2](X || Y))
+|| (nu Y . <enter2>true && [enter2]X && [!enter2](X || Y))
+|| (nu Y . <exit2>true && [exit2]X && [!exit2](X || Y))
+|| (<b11w>true && [b11w]X)
+|| (<b21r>true && [b21r]X)
+|| (<b12r>true && [b12r]X)
+|| (<b22w>true && [b22w]X)
+|| (<k1>true && [k1]X)
+|| (<k2>true && [k2]X)
+)
+)

@@ -1,0 +1,8 @@
+% Property from Mader, see specification for details
+%
+% If a process wishes to enter the critical section, then it
+% eventually may do so.
+% Here we show the property for process 1.
+%
+% Property does not hold for both interpretations of wait.
+nu Z . [true]Z && [req1](mu X . [true]X || <enter1>true)
