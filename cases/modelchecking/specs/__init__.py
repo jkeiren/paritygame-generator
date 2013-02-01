@@ -22,6 +22,15 @@ class LeaderSpec(Spec):
   def mcrl2(self, nparticipants):
     return self._template.substitute(nparticipants=nparticipants)
 
+class DataSpec(Spec):
+  def __init__(self, template=None):
+    super(DataSpec,self).__init__(template)
+  
+  def mcrl2(self, datasize):
+    return self._template.substitute(
+      data='|'.join(['d' + str(i + 1) for i in range(0, datasize)])
+    )
+
 class SWPSpec(Spec):
   TEMPLATE = 'swp'
   def mcrl2(self, windowsize, datasize):
@@ -34,6 +43,9 @@ class SWPSpec(Spec):
 
 __SPECS = {
     'Debug spec': Spec('debugging'),
+    'ABP': DataSpec('abp'),
+    'Onebit': DataSpec('onebit'),
+    'BRP': DataSpec('brp'),
     'SWP': SWPSpec(),
     'IEEE1394': Spec('ieee1394'),
     'Lift (Incorrect)': LiftSpec('lift-incorrect'),

@@ -104,6 +104,9 @@ def getcases():
      IEEECase('IEEE1394')] + \
     [Case('Lift (Correct)', nlifts=n) for n in range(2, 5)] + \
     [Case('Lift (Incorrect)', nlifts=n) for n in range(2, 5)] + \
+    [Case('ABP', datasize=i) for i in [2,4,8,16,32]] + \
+    [Case('Onebit', datasize=i) for i in range(2,7)] + \
+    [Case('BRP', datasize=i) for i in range(2,7)] + \
     [Case('SWP', windowsize=1, datasize=i) for i in range(2, 7)] + \
     [Case('SWP', windowsize=2, datasize=i) for i in range(2, 7)] + \
     [Case('SWP', windowsize=3, datasize=i) for i in range(2, 5)] + \
