@@ -1,0 +1,5 @@
+% [PW08]
+% For any sequence, if it contains infinitely many r steps, then it
+% contains infinitely many w steps.
+% In LTL: A(GFr -> GFw)
+nu X . mu Y . nu Z . ([exists d: D . sb(d)]X && [exists d: D . ra(d)]Y && [!(exists d:D . ra(d)) && !(exists d: D . sb(d))]Z)
