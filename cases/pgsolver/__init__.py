@@ -11,7 +11,11 @@ class Case(PGCase):
   def __str__(self):
     return '{0}({1})'.format(self.__generator, ', '.join(self.__args))
   
-  def _makePGfile(self, log):
+  def _makePGfile(self, log, returnExisting):
+    pgfile = self._existingTempFile('gm')
+    if pgfile and returnExisting:
+      return pgfile
+    
     pgfile = self._newTempFile('gm')
     pgfile.write(tools.Tool(self.__generator, log, memlimit=MEMLIMIT)(*self.__args))
     pgfile.close()
