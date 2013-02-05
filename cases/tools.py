@@ -39,9 +39,18 @@ class MemoryLimitExceeded(Exception):
     return 'The commandline "{0}" failed with an out of memory error.\nStandard error:\n{1}\nStandard output:\n{2}\n'.format(
       self.__cmdline, self.__err, self.__out)
 
-def setlimits(memlimit):
+def setlimits(memlimit, log):
   if memlimit != None:
-    resource.setrlimit(resource.RLIMIT_AS, (memlimit,memlimit))
+    currentMemlimit = resource.getrlimit(resource.RLIMIT_AS)
+    if memlimit > currentMemlimit[0]:
+      log.warning("Cannot increase soft limit from {0} to {1}".format(currentMemlimit[0], memlimit))
+    if memlimit > currentMemlimit[1]:
+      log.warning("Cannot increase soft limit from {0} to {1}".format(currentMemlimit[1], memlimit))
+      
+    try:  
+      resource.setrlimit(resource.RLIMIT_AS, (max([memlimit,currentMemlimit[0]]),max([memlimit,currentMemlimit[1]])))
+    except Exception as e:
+      log.warning("Error setting limits: {0}\nError is ignored!".format(e))
 
 class Tool(object):
   def __init__(self, name, log, filter_=None, timed=False, timeout=None, memlimit=None):
@@ -60,7 +69,7 @@ class Tool(object):
     self.__log.info('Running {0}'.format(' '.join(cmdline)))
 
     p = subprocess.Popen(cmdline, stdin=subprocess.PIPE, stdout=stdout, 
-                         stderr=stderr, preexec_fn=setlimits(memlimit))
+                         stderr=stderr, preexec_fn=setlimits(memlimit, self.__log))
     if timeout is not None:
       timer = threading.Timer(timeout, p.kill)
       timer.start()
