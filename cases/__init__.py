@@ -8,9 +8,22 @@ import tools
 import pool
 import sys
 
-SOLVE_TIMEOUT = 3600
-MEMLIMIT = 128*1024*1024*1024 # memory limit in bytes
-LPSTOOLS_MEMLIMIT = 8*1024*1024*1024
+TIMEOUT = 12*60*60 # 12 hours for getting info
+LPSTOOLS_TIMEOUT = TIMEOUT
+MLSOLVER_TIMEOUT= 60*60
+PBES2BES_TIMEOUT = TIMEOUT
+PGINFO_TIMEOUT = TIMEOUT
+PGSOLVER_TIMEOUT= TIMEOUT
+SOLVE_TIMEOUT = 60*60 # 1 hour for solving
+
+MEMLIMIT = 128*1024*1024 # memory limit in kbytes
+LPSTOOLS_MEMLIMIT = 8*1024*1024
+MLSOLVER_MEMLIMIT = MEMLIMIT
+PBES2BES_MEMLIMIT = MEMLIMIT
+PGINFO_MEMLIMIT = MEMLIMIT
+PGSOLVER_MEMLIMIT = MEMLIMIT
+SOLVE_MEMLIMIT = MEMLIMIT
+
 RETURN_EXISTING = True
 
 class TempObj(pool.Task):
@@ -67,7 +80,7 @@ class PGCase(TempObj):
     else:
       yamlfile = self._newTempFilename("yaml")
 
-    tools.pginfo('-v', '-m', '30000', '-n', '2', pgfile, yamlfile, memlimit=MEMLIMIT)
+    tools.pginfo('-v', '-m', '30000', '-n', '2', pgfile, yamlfile, memlimit=PGINFO_MEMLIMIT, timeout=PGINFO_TIMEOUT)
     return yamlfile
 
   def phase0(self, log):
@@ -90,7 +103,7 @@ class PBESCase(PGCase):
     pbes.write(self._makePBES())
     pbes.close()
     pgfile = self._newTempFilename('gm')
-    tools.pbes2bes('-s0', '-v', '-rjittyc', '-opgsolver', pbes.name, pgfile, memlimit=MEMLIMIT)
+    tools.pbes2bes('-s0', '-v', '-rjittyc', '-opgsolver', pbes.name, pgfile, memlimit=PBES2BES_MEMLIMIT, timeout=PBES2BES_TIMEOUT)
     os.unlink(pbes.name)
     return pgfile
 

@@ -3,7 +3,7 @@ import logging
 import traceback
 import multiprocessing
 import os
-from cases import tools, PBESCase, TempObj, MEMLIMIT, LPSTOOLS_MEMLIMIT
+from cases import tools, PBESCase, TempObj, LPSTOOLS_MEMLIMIT, LPSTOOLS_TIMEOUT
 
 class EquivCase(PBESCase):
   def __init__(self, description, lpsfile1, lpsfile2, equiv, temppath):
@@ -19,8 +19,8 @@ class EquivCase(PBESCase):
     return self.equiv
   
   def _makePBES(self):
-    pbes = tools.lpsbisim2pbes('-b' + self.equiv, self.lpsfile1, self.lpsfile2, memlimit=LPSTOOLS_MEMLIMIT)
-    return tools.pbesconstelm(stdin=pbes, memlimit=LPSTOOLS_MEMLIMIT)
+    pbes = tools.lpsbisim2pbes('-b' + self.equiv, self.lpsfile1, self.lpsfile2, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
+    return tools.pbesconstelm(stdin=pbes, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
   
 class Case(TempObj):
   def __init__(self, description, spec1, spec2):
@@ -42,11 +42,11 @@ class Case(TempObj):
     '''Linearises self.spec1 and self.spec2 and applies lpssuminst to the 
        resulting LPSs.'''
     log.info('Linearising LPSs for {0}'.format(self))
-    lps1 = tools.mcrl22lps('-fnD', stdin=self.spec1, memlimit=LPSTOOLS_MEMLIMIT)
-    lps2 = tools.mcrl22lps('-fnD', stdin=self.spec2, memlimit=LPSTOOLS_MEMLIMIT)
+    lps1 = tools.mcrl22lps('-fnD', stdin=self.spec1, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
+    lps2 = tools.mcrl22lps('-fnD', stdin=self.spec2, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
     log.info('Applying lpssuminst to LPSs for {0}'.format(self))
-    lps1 = tools.lpssuminst('-f', stdin=lps1, memlimit=LPSTOOLS_MEMLIMIT)
-    lps2 = tools.lpssuminst('-f', stdin=lps2, memlimit=LPSTOOLS_MEMLIMIT)
+    lps1 = tools.lpssuminst('-f', stdin=lps1, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
+    lps2 = tools.lpssuminst('-f', stdin=lps2, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
     lpsfile1 = self._newTempFile('lps')
     lpsfile1.write(lps1)
     lpsfile1.close()
@@ -66,7 +66,9 @@ class Case(TempObj):
     for filename in self.__files:
       os.unlink(filename)
   
-def getcases():
+def getcases(debugOnly = False):
+  if debugOnly:
+    return []
   import specs
   buf = specs.get('Buffer')
   swp = specs.get('SWP')

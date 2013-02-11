@@ -1,8 +1,6 @@
-from cases import tools, TempObj, PGCase
+from cases import tools, TempObj, PGCase, MLSOLVER_TIMEOUT, MLSOLVER_MEMLIMIT
 import formulas
 import os
-
-MLSOLVER_TIMEOUT=3600
 
 class MLSolverCase(PGCase):
   def __init__(self, name, compact, **kwargs):
@@ -25,9 +23,9 @@ class MLSolverCase(PGCase):
     
     pgfilename = self._newTempFilename('gm')
     if self.__compact:
-      pg = tools.mlsolver('-ve', '--option', 'comp', '--{0}'.format(self.formula.mode()), self.formula.type(), '-pg', self.formula.form(**self.__kwargs), timeout=MLSOLVER_TIMEOUT)
+      pg = tools.mlsolver('-ve', '--option', 'comp', '--{0}'.format(self.formula.mode()), self.formula.type(), '-pg', self.formula.form(**self.__kwargs), timeout=MLSOLVER_TIMEOUT, memlimit=MLSOLVER_MEMLIMIT)
     else:
-      pg = tools.mlsolver('-ve', '--{0}'.format(self.formula.mode()), self.formula.type(), '-pg', self.formula.form(**self.__kwargs), timeout=MLSOLVER_TIMEOUT)
+      pg = tools.mlsolver('-ve', '--{0}'.format(self.formula.mode()), self.formula.type(), '-pg', self.formula.form(**self.__kwargs), timeout=MLSOLVER_TIMEOUT, memlimit=MLSOLVER_MEMLIMIT)
     pgfile = open(pgfilename, 'w')
     pgfile.write(pg)
     pgfile.close()
@@ -51,7 +49,9 @@ class Case(TempObj):
     for compact in True, False:
       self.subtasks.append(MLSolverCase(self.__name, compact, **self.__kwargs))
 
-def getcases():
+def getcases(debugOnly = False):
+  if debugOnly:
+    return []
   return \
     [Case('Include', n=n) for n in range(1,9)] + \
     [Case('Nester', n=n) for n in range(1,9)] + \

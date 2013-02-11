@@ -1,4 +1,4 @@
-from cases import tools, TempObj, PBESCase,MEMLIMIT,LPSTOOLS_MEMLIMIT
+from cases import tools, TempObj, PBESCase, LPSTOOLS_MEMLIMIT, LPSTOOLS_TIMEOUT
 import specs
 import os.path
 import logging
@@ -25,13 +25,13 @@ class Property(PBESCase):
     '''If a lpsactionrename specification exists for this property, transform
        the LPS.'''
     if os.path.exists(self.renfile):
-      self.lps = tools.lpsactionrename('-f', self.renfile, '-v', stdin=self.lps, memlimit=LPSTOOLS_MEMLIMIT)
+      self.lps = tools.lpsactionrename('-f', self.renfile, '-v', stdin=self.lps, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
   
   def _makePBES(self):
     '''Generate a PBES out of self.lps and self.mcffile, and apply pbesconstelm
        to it.'''
     self.__rename()
-    return tools.pbesconstelm('-v', stdin=tools.lps2pbes('-f', self.mcffile, '-v', stdin=self.lps, memlimit=LPSTOOLS_MEMLIMIT))
+    return tools.pbesconstelm('-v', stdin=tools.lps2pbes('-f', self.mcffile, '-v', stdin=self.lps, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT))
 
 class Case(TempObj):
   def __init__(self, name, **kwargs):
@@ -51,7 +51,7 @@ class Case(TempObj):
   def _makeLPS(self, log):
     '''Linearises the specification in self._mcrl2.'''
     log.debug('Linearising {0}'.format(self))
-    return tools.mcrl22lps('-fvD', stdin=self._mcrl2, memlimit=LPSTOOLS_MEMLIMIT)
+    return tools.mcrl22lps('-fvD', stdin=self._mcrl2, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
 
   def phase0(self, log):
     '''Generates an LPS and creates subtasks for every property that should be
@@ -68,9 +68,9 @@ class IEEECase(Case):
     '''Linearises the specification in self._mcrl2 and applies lpssuminst to the
     result.'''
     log.debug('Linearising {0}'.format(self))
-    lps = tools.mcrl22lps('-vD', stdin=self._mcrl2)
+    lps = tools.mcrl22lps('-vD', stdin=self._mcrl2, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
     log.debug('Applying suminst on LPS of {0}'.format(self))
-    return tools.lpssuminst(stdin=lps, memlimit=LPSTOOLS_MEMLIMIT)
+    return tools.lpssuminst(stdin=lps, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
 
 class GameCase(Case):
   def __init__(self, name, boardsize=4, use_compiled_constelm=False, **kwargs):
@@ -81,17 +81,21 @@ class GameCase(Case):
     '''Linearises the specification in self._mcrl2 and applies lpssuminst,
     lpsparunfold and lpsconstelm to the result.'''
     log.debug('Linearising {0}'.format(self))
-    lps = tools.mcrl22lps('-vfD', stdin=self._mcrl2, memlimit=LPSTOOLS_MEMLIMIT)
+    lps = tools.mcrl22lps('-vfD', stdin=self._mcrl2, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
     log.debug('Applying suminst on LPS of {0}'.format(self))
-    lps = tools.lpssuminst(stdin=lps, memlimit=LPSTOOLS_MEMLIMIT)
+    lps = tools.lpssuminst(stdin=lps, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
     log.debug('Applying parunfold (for Board) on LPS of {0}'.format(self))
-    lps = tools.lpsparunfold('-lv', '-n{0}'.format(self.__boardsize), '-sBoard', stdin=lps, memlimit=LPSTOOLS_MEMLIMIT)
+    lps = tools.lpsparunfold('-lv', '-n{0}'.format(self.__boardsize), '-sBoard', stdin=lps, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
     log.debug('Applying parunfold (for Row) on LPS of {0}'.format(self))
-    lps = tools.lpsparunfold('-lv', '-n{0}'.format(self.__boardsize), '-sRow', stdin=lps, memlimit=LPSTOOLS_MEMLIMIT)
+    lps = tools.lpsparunfold('-lv', '-n{0}'.format(self.__boardsize), '-sRow', stdin=lps, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
     log.debug('Applying constelm on LPS of {0}'.format(self))
-    return tools.lpsconstelm('-ctvrjittyc' if self.__use_compiled_constelm else '-ctv', stdin=lps, memlimit=LPSTOOLS_MEMLIMIT)
+    return tools.lpsconstelm('-ctvrjittyc' if self.__use_compiled_constelm else '-ctv', stdin=lps, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
 
-def getcases():
+def getcases(debugOnly = False):
+  if(debugOnly):
+    return [Case('Debug spec'),
+            IEEECase('IEEE1394')]
+  
   return \
     [Case('Debug spec'),
      Case('Othello'),

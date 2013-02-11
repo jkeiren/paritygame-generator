@@ -6,7 +6,7 @@ import os
 from cases import modelchecking, equivchecking, pgsolver, mlsolver
 from cases.pool import TaskPool 
 
-def run(poolsize, resultsfile):
+def run(poolsize, resultsfile, debugOnly=False):
   log = logging.getLogger('experiments')
 
   casesdone = []
@@ -28,7 +28,7 @@ def run(poolsize, resultsfile):
   pool = TaskPool(poolsize)
   try:
     tasks = []
-    for task in mlsolver.getcases() + modelchecking.getcases() + equivchecking.getcases() + pgsolver.getcases():
+    for task in mlsolver.getcases(debugOnly) + modelchecking.getcases(debugOnly) + equivchecking.getcases(debugOnly) + pgsolver.getcases(debugOnly):
       if str(task) in casesdone:
         log.info('- ' + str(task))
       else:
@@ -53,6 +53,8 @@ def runCmdLine():
                     help='Run N jobs simultaneously.', metavar='N', default=4)
   parser.add_option('-v', action='count', dest='verbosity',
                     help='Be more verbose. Use more than once to increase verbosity even more.')
+  parser.add_option('--debug-only', action='store_true', dest='debugonly',
+                    help='Run the tests only on the debug specification.')
   options, args = parser.parse_args()
   if not args:
     args = (None,)
@@ -66,7 +68,7 @@ def runCmdLine():
     logging.getLogger('taskpool').setLevel(logging.DEBUG)
     logging.getLogger('tools').setLevel(logging.INFO)
 
-  run(options.poolsize, args[0])
+  run(options.poolsize, args[0], options.debugonly)
 
 if __name__ == '__main__':
   runCmdLine()

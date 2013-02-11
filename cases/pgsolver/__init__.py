@@ -1,5 +1,5 @@
 import os
-from cases import PGCase, tools, MEMLIMIT
+from cases import PGCase, tools, PGSOLVER_MEMLIMIT, PGSOLVER_TIMEOUT
 
 class Case(PGCase):
   def __init__(self, generator, *args):
@@ -17,11 +17,13 @@ class Case(PGCase):
       return pgfile
     
     pgfile = self._newTempFile('gm')
-    pgfile.write(tools.Tool(self.__generator, log, memlimit=MEMLIMIT)(*self.__args))
+    pgfile.write(tools.Tool(self.__generator, log, memlimit=PGSOLVER_MEMLIMIT, timeout=PGSOLVER_TIMEOUT)(*self.__args))
     pgfile.close()
     return pgfile.name
 
-def getcases():
+def getcases(debugOnly = False):
+  if debugOnly:
+    return []
   return \
     [Case('elevatorverification', n) for n in range(3, 8)] + \
     [Case('elevatorverification', '-u', n) for n in range(3, 8)] + \

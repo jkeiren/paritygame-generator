@@ -10,6 +10,8 @@ import resource
 __LOG = logging.getLogger('tools')
 logging.raiseExceptions = False
 
+_TIMEOUTSCRIPT = os.path.join(os.path.dirname(os.path.realpath(__file__)), "timeout")
+
 class ToolException(Exception):
   def __init__(self, tool, exitcode, out, err):
     Exception.__init__(self)
@@ -28,29 +30,11 @@ class Timeout(Exception):
     self.out = out
     self.err = err
     
-class MemoryLimitExceeded(Exception):
+class OutOfMemory(Exception):
   def __init__(self, tool, out, err):
-    Exception.__init__(self)
+    super(OutOfMemory, self).__init__()
     self.__out = out
     self.__err = err
-    self.__cmdline = ' '.join(tool)
-
-  def __str__(self):
-    return 'The commandline "{0}" failed with an out of memory error.\nStandard error:\n{1}\nStandard output:\n{2}\n'.format(
-      self.__cmdline, self.__err, self.__out)
-
-def setlimits(memlimit, log):
-  if memlimit != None:
-    currentMemlimit = resource.getrlimit(resource.RLIMIT_AS)
-    if memlimit > currentMemlimit[0]:
-      log.warning("Cannot increase soft limit from {0} to {1}".format(currentMemlimit[0], memlimit))
-    if memlimit > currentMemlimit[1]:
-      log.warning("Cannot increase soft limit from {0} to {1}".format(currentMemlimit[1], memlimit))
-      
-    try:  
-      resource.setrlimit(resource.RLIMIT_AS, (max([memlimit,currentMemlimit[0]]),max([memlimit,currentMemlimit[1]])))
-    except Exception as e:
-      log.warning("Error setting limits: {0}\nError is ignored!".format(e))
 
 class Tool(object):
   def __init__(self, name, log, filter_=None, timed=False, timeout=None, memlimit=None):
@@ -67,21 +51,40 @@ class Tool(object):
     cmdline = []
     cmdline += [self.__name] + [str(x) for x in args]
     self.__log.info('Running {0}'.format(' '.join(cmdline)))
+    timeoutcmd = []
 
-    p = subprocess.Popen(cmdline, stdin=subprocess.PIPE, stdout=stdout, 
-                         stderr=stderr, preexec_fn=setlimits(memlimit, self.__log))
-    if timeout is not None:
-      timer = threading.Timer(timeout, p.kill)
-      timer.start()
-      self.result, self.error = p.communicate(stdin)
-      if not timer.isAlive():
-        raise Timeout(self.result, self.error)
-      else: 
-        timer.cancel()
-    else:
-      self.result, self.error = p.communicate(stdin)
+    if timeout is not None or memlimit is not None:
+      if not os.path.exists(_TIMEOUTSCRIPT):
+        self.__log.error('The script {0} does not exists, cannot run without it'.format(_TIMEOUTSCRIPT))
+        raise Exception('File {0} not found'.format(_TIMEOUTSCRIPT))
+      
+      timeoutcmd += [_TIMEOUTSCRIPT, '--confess', '--no-info-on-success']
+      if timeout is not None:
+        timeoutcmd += ['-t', str(timeout)]
+      if memlimit is not None:
+        timeoutcmd += ['-m', str(memlimit)]
+        
+      cmdline = timeoutcmd + cmdline
+    
+    p = subprocess.Popen(cmdline, stdin=subprocess.PIPE, stdout=stdout, stderr=stderr)
+    self.result, self.error = p.communicate(stdin)
     
     if p.returncode != 0:
+      # Filter the output to see whether we exceeded time or memory:
+      TIMEOUT_RE = 'TIMEOUT CPU (?P<cpu>\d+[.]\d*) MEM (?P<mem>\d+) MAXMEM (?P<maxmem>\d+) STALE (?P<stale>\d+)'
+      m = re.search(TIMEOUT_RE, self.error, re.DOTALL)
+      print m
+      if m is not None:
+        print m.groupdict()
+        raise Timeout(self.result, self.error)
+      
+      MEMLIMIT_RE = 'MEM CPU (?P<cpu>\d+[.]\d*) MEM (?P<mem>\d+) MAXMEM (?P<maxmem>\d+) STALE (?P<stale>\d+)'
+      m = re.search(MEMLIMIT_RE, self.error, re.DOTALL)
+      print m
+      if m is not None:
+        print m.groupdict()
+        raise OutOfMemory(self.result, self.error)
+      
       raise ToolException(cmdline, p.returncode, self.result, self.error)
             
   def __run_timed(self, stdin, stdout, stderr, timeout, memlimit, *args):
