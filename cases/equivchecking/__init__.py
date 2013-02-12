@@ -19,8 +19,9 @@ class EquivCase(PBESCase):
     return self.equiv
   
   def _makePBES(self):
-    pbes = tools.lpsbisim2pbes('-b' + self.equiv, self.lpsfile1, self.lpsfile2, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
-    return tools.pbesconstelm(stdin=pbes, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
+    result = tools.lpsbisim2pbes('-b' + self.equiv, self.lpsfile1, self.lpsfile2, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
+    result = tools.pbesconstelm(stdin=result['out'], memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
+    return result['out']
   
 class Case(TempObj):
   def __init__(self, description, spec1, spec2):
@@ -42,16 +43,16 @@ class Case(TempObj):
     '''Linearises self.spec1 and self.spec2 and applies lpssuminst to the 
        resulting LPSs.'''
     log.info('Linearising LPSs for {0}'.format(self))
-    lps1 = tools.mcrl22lps('-fnD', stdin=self.spec1, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
-    lps2 = tools.mcrl22lps('-fnD', stdin=self.spec2, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
+    result1 = tools.mcrl22lps('-fnD', stdin=self.spec1, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
+    result2 = tools.mcrl22lps('-fnD', stdin=self.spec2, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
     log.info('Applying lpssuminst to LPSs for {0}'.format(self))
-    lps1 = tools.lpssuminst('-f', stdin=lps1, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
-    lps2 = tools.lpssuminst('-f', stdin=lps2, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
+    result1 = tools.lpssuminst('-f', stdin=result1['out'], memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
+    result2 = tools.lpssuminst('-f', stdin=result2['out'], memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
     lpsfile1 = self._newTempFile('lps')
-    lpsfile1.write(lps1)
+    lpsfile1.write(result1['out'])
     lpsfile1.close()
     lpsfile2 = self._newTempFile('lps')
-    lpsfile2.write(lps2)
+    lpsfile2.write(result2['out'])
     lpsfile2.close()
     return lpsfile1.name, lpsfile2.name
   

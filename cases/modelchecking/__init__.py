@@ -25,13 +25,16 @@ class Property(PBESCase):
     '''If a lpsactionrename specification exists for this property, transform
        the LPS.'''
     if os.path.exists(self.renfile):
-      self.lps = tools.lpsactionrename('-f', self.renfile, '-v', stdin=self.lps, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
+      result = tools.lpsactionrename('-f', self.renfile, '-v', stdin=self.lps, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
+      self.lps = result['out']
   
   def _makePBES(self):
     '''Generate a PBES out of self.lps and self.mcffile, and apply pbesconstelm
        to it.'''
     self.__rename()
-    return tools.pbesconstelm('-v', stdin=tools.lps2pbes('-f', self.mcffile, '-v', stdin=self.lps, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT))
+    result = tools.lps2pbes('-f', self.mcffile, '-v', stdin=self.lps, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
+    result = tools.pbesconstelm('-v', stdin=result['out'], memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
+    return result['out']
 
 class Case(TempObj):
   def __init__(self, name, **kwargs):
@@ -51,7 +54,8 @@ class Case(TempObj):
   def _makeLPS(self, log):
     '''Linearises the specification in self._mcrl2.'''
     log.debug('Linearising {0}'.format(self))
-    return tools.mcrl22lps('-fvD', stdin=self._mcrl2, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
+    result = tools.mcrl22lps('-fvD', stdin=self._mcrl2, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
+    return result['out']
 
   def phase0(self, log):
     '''Generates an LPS and creates subtasks for every property that should be
@@ -68,9 +72,10 @@ class IEEECase(Case):
     '''Linearises the specification in self._mcrl2 and applies lpssuminst to the
     result.'''
     log.debug('Linearising {0}'.format(self))
-    lps = tools.mcrl22lps('-vD', stdin=self._mcrl2, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
+    result = tools.mcrl22lps('-vD', stdin=self._mcrl2, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
     log.debug('Applying suminst on LPS of {0}'.format(self))
-    return tools.lpssuminst(stdin=lps, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
+    result = tools.lpssuminst(stdin=result['out'], memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
+    return result['out']
 
 class GameCase(Case):
   def __init__(self, name, boardsize=4, use_compiled_constelm=False, **kwargs):
@@ -81,15 +86,16 @@ class GameCase(Case):
     '''Linearises the specification in self._mcrl2 and applies lpssuminst,
     lpsparunfold and lpsconstelm to the result.'''
     log.debug('Linearising {0}'.format(self))
-    lps = tools.mcrl22lps('-vfD', stdin=self._mcrl2, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
+    result = tools.mcrl22lps('-vfD', stdin=self._mcrl2, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
     log.debug('Applying suminst on LPS of {0}'.format(self))
-    lps = tools.lpssuminst(stdin=lps, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
+    result = tools.lpssuminst(stdin=result['out'], memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
     log.debug('Applying parunfold (for Board) on LPS of {0}'.format(self))
-    lps = tools.lpsparunfold('-lv', '-n{0}'.format(self.__boardsize), '-sBoard', stdin=lps, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
+    result = tools.lpsparunfold('-lv', '-n{0}'.format(self.__boardsize), '-sBoard', stdin=result['out'], memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
     log.debug('Applying parunfold (for Row) on LPS of {0}'.format(self))
-    lps = tools.lpsparunfold('-lv', '-n{0}'.format(self.__boardsize), '-sRow', stdin=lps, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
+    result = tools.lpsparunfold('-lv', '-n{0}'.format(self.__boardsize), '-sRow', stdin=result['out'], memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
     log.debug('Applying constelm on LPS of {0}'.format(self))
-    return tools.lpsconstelm('-ctvrjittyc' if self.__use_compiled_constelm else '-ctv', stdin=lps, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
+    result = tools.lpsconstelm('-ctvrjittyc' if self.__use_compiled_constelm else '-ctv', stdin=result['out'], memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
+    return result['out']
 
 def getcases(debugOnly = False):
   if(debugOnly):

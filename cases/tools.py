@@ -44,13 +44,18 @@ class Tool(object):
     self.__memlimit = memlimit 
     self.__filter = filter_
     self.__timed = timed
-    self.result = None
-    self.error = None
+    self.result = {}
+    self.result['cmdline'] = None
+    self.result['out'] = None
+    self.result['err'] = None
+    self.result['filter'] = None
+    self.result['times'] = None    
     
   def __run(self, stdin, stdout, stderr, timeout, memlimit, *args):
     cmdline = []
     cmdline += [self.__name] + [str(x) for x in args]
     self.__log.info('Running {0}'.format(' '.join(cmdline)))
+    self.result['cmdline'] = ' '.join(cmdline)
     timeoutcmd = []
 
     if timeout is not None or memlimit is not None:
@@ -67,25 +72,24 @@ class Tool(object):
       cmdline = timeoutcmd + cmdline
     
     p = subprocess.Popen(cmdline, stdin=subprocess.PIPE, stdout=stdout, stderr=stderr)
-    self.result, self.error = p.communicate(stdin)
+    out, err = p.communicate(stdin)
+    self.result['out'], self.result['err'] = out, err 
     
     if p.returncode != 0:
       # Filter the output to see whether we exceeded time or memory:
       TIMEOUT_RE = 'TIMEOUT CPU (?P<cpu>\d+[.]\d*) MEM (?P<mem>\d+) MAXMEM (?P<maxmem>\d+) STALE (?P<stale>\d+)'
-      m = re.search(TIMEOUT_RE, self.error, re.DOTALL)
+      m = re.search(TIMEOUT_RE, self.result['err'], re.DOTALL)
       print m
       if m is not None:
-        print m.groupdict()
-        raise Timeout(self.result, self.error)
+        raise Timeout(self.result['out'], self.result['err'])
       
       MEMLIMIT_RE = 'MEM CPU (?P<cpu>\d+[.]\d*) MEM (?P<mem>\d+) MAXMEM (?P<maxmem>\d+) STALE (?P<stale>\d+)'
-      m = re.search(MEMLIMIT_RE, self.error, re.DOTALL)
+      m = re.search(MEMLIMIT_RE, self.result['err'], re.DOTALL)
       print m
       if m is not None:
-        print m.groupdict()
-        raise OutOfMemory(self.result, self.error)
+        raise OutOfMemory(self.result['out'], self.result['err'])
       
-      raise ToolException(cmdline, p.returncode, self.result, self.error)
+      raise ToolException(cmdline, p.returncode, self.result['out'], self.result['err'])
             
   def __run_timed(self, stdin, stdout, stderr, timeout, memlimit, *args):
     timings = tempfile.NamedTemporaryFile(suffix='.yaml', delete=False)
@@ -93,23 +97,17 @@ class Tool(object):
     self.__run(stdin, stdout, stderr, timeout, memlimit, '--timings='+timings.name, *args)
     t = yaml.load(open(timings.name).read())
     os.unlink(timings.name)
-    self.result = [self.result, t]
+    self.result['times'] = t
   
   def __apply_filter(self, filter_):
     m = re.search(filter_, self.error, re.DOTALL)
     if m is not None:
-      if isinstance(self.result, list):
-        self.result.append(m.groupdict())
-      else:
-        self.result = [self.result, m.groupdict()]
+      self.result['filter'] = m.groupdict()
     else:
       self.__log.error('No match!')
       self.__log.error(filter_)
-      self.__log.error(self.error)
-      if isinstance(self.result, list):
-        self.result.append({})
-      else:
-        self.result = [self.result, {}]
+      self.__log.error(self.result['err'])
+      self.result['filter'] = {}
   
   def __str__(self):
     return self.__name
@@ -130,7 +128,7 @@ class Tool(object):
       self.__run_timed(stdin, stdout, stderr, timeout, memlimit, *args)
     else:
       self.__run(stdin, stdout, stderr, timeout, memlimit, *args)
-    self.__log.debug(self.error)
+    self.__log.debug(self.result['err'])
     if filter_:
       self.__apply_filter(filter_)
     return self.result

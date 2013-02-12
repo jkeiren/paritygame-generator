@@ -23,9 +23,11 @@ class MLSolverCase(PGCase):
     
     pgfilename = self._newTempFilename('gm')
     if self.__compact:
-      pg = tools.mlsolver('-ve', '--option', 'comp', '--{0}'.format(self.formula.mode()), self.formula.type(), '-pg', self.formula.form(**self.__kwargs), timeout=MLSOLVER_TIMEOUT, memlimit=MLSOLVER_MEMLIMIT)
+      result = tools.mlsolver('-ve', '--option', 'comp', '--{0}'.format(self.formula.mode()), self.formula.type(), '-pg', self.formula.form(**self.__kwargs), timeout=MLSOLVER_TIMEOUT, memlimit=MLSOLVER_MEMLIMIT)
+      pg = result['out']
     else:
-      pg = tools.mlsolver('-ve', '--{0}'.format(self.formula.mode()), self.formula.type(), '-pg', self.formula.form(**self.__kwargs), timeout=MLSOLVER_TIMEOUT, memlimit=MLSOLVER_MEMLIMIT)
+      result = tools.mlsolver('-ve', '--{0}'.format(self.formula.mode()), self.formula.type(), '-pg', self.formula.form(**self.__kwargs), timeout=MLSOLVER_TIMEOUT, memlimit=MLSOLVER_MEMLIMIT)
+      pg= result['out']
     pgfile = open(pgfilename, 'w')
     pgfile.write(pg)
     pgfile.close()

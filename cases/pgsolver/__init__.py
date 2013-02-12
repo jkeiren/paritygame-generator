@@ -17,7 +17,8 @@ class Case(PGCase):
       return pgfile
     
     pgfile = self._newTempFile('gm')
-    pgfile.write(tools.Tool(self.__generator, log, memlimit=PGSOLVER_MEMLIMIT, timeout=PGSOLVER_TIMEOUT)(*self.__args))
+    result = tools.Tool(self.__generator, log, memlimit=PGSOLVER_MEMLIMIT, timeout=PGSOLVER_TIMEOUT)(*self.__args)
+    pgfile.write(result['out'])
     pgfile.close()
     return pgfile.name
 
