@@ -14,6 +14,7 @@ class EquivCase(PBESCase):
     self.lpsfile1 = lpsfile1
     self.lpsfile2 = lpsfile2
     self.equiv = equiv
+    self.result['equivalence'] = str(self)
     
   def __str__(self):
     return self.equiv
@@ -32,9 +33,9 @@ class Case(TempObj):
     self._prefix = self.__desc
     self.spec1 = spec1
     self.spec2 = spec2
-    self.sizes = {}
-    self.times = {}
-    self.solutions = {}
+    self.result = {}
+    self.result['case'] = str(self)
+    self.result['instances'] = []
   
   def __str__(self):
     return self.__desc
@@ -66,13 +67,16 @@ class Case(TempObj):
     log.info('Finalising {0}'.format(self))
     for filename in self.__files:
       os.unlink(filename)
+    for r in self.results:
+      self.result['instances'].append(r.result)
   
 def getcases(debugOnly = False):
-  if debugOnly:
-    return []
   import specs
   buf = specs.get('Buffer')
   swp = specs.get('SWP')
+  
+  if debugOnly:
+    return [Case('Buffer/SWP (w={0}, d={1})'.format(w, d), swp.mcrl2(w, d), buf.mcrl2(2 * w, d)) for w, d in [(1, 2)]]
   return \
     [Case('Buffer/SWP (w={0}, d={1})'.format(w, d), swp.mcrl2(w, d), buf.mcrl2(2 * w, d))
      for w, d in [(1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (1, 8), (2, 2), (2, 3)]]

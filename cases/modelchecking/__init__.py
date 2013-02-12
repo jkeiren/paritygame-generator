@@ -10,13 +10,14 @@ import traceback
 
 class Property(PBESCase):
   def __init__(self, description, lps, mcf, temppath):
-    PBESCase.__init__(self)
+    super(Property, self).__init__()
     self.__desc = description
     self._temppath = temppath
     self._prefix = self.__desc + '_' + os.path.splitext(os.path.split(mcf)[1])[0]
     self.lps = lps
     self.mcffile = mcf
     self.renfile = os.path.splitext(self.mcffile)[0] + '.ren'
+    self.result['property'] = description
   
   def __str__(self):
     return os.path.splitext(os.path.split(self.mcffile)[1])[0]
@@ -46,7 +47,10 @@ class Case(TempObj):
     self._temppath = os.path.join(os.path.split(__file__)[0], 'temp')
     self._prefix = '{0}{1}'.format(self.__name, ('_'.join('{0}={1}'.format(k,v) for k,v in self.__kwargs.items())))
     self.proppath = os.path.join(os.path.split(__file__)[0], 'properties', spec.TEMPLATE)
-  
+    self.result = {}
+    self.result['case'] = str(self)
+    self.result['properties'] = []
+      
   def __str__(self):
     argstr = ', '.join(['{0}={1}'.format(k, v) for k, v in self.__kwargs.items()])
     return '{0}{1}'.format(self.__name, ' [{0}]'.format(argstr) if argstr else '')
@@ -66,6 +70,10 @@ class Case(TempObj):
         continue
       self.subtasks.append(Property(self._prefix, lps, os.path.join(self.proppath, prop), 
                                     self._temppath))
+      
+  def phase1(self, log):
+    for r in self.results:
+      self.result['properties'].append(r.result)
     
 class IEEECase(Case):
   def _makeLPS(self, log):
@@ -82,6 +90,7 @@ class GameCase(Case):
     super(GameCase, self).__init__(name, **kwargs)
     self.__boardsize = boardsize
     self.__use_compiled_constelm = use_compiled_constelm
+    
   def _makeLPS(self, log):
     '''Linearises the specification in self._mcrl2 and applies lpssuminst,
     lpsparunfold and lpsconstelm to the result.'''
@@ -99,8 +108,7 @@ class GameCase(Case):
 
 def getcases(debugOnly = False):
   if(debugOnly):
-    return [Case('Debug spec'),
-            IEEECase('IEEE1394')]
+    return [Case('Debug spec')]
   
   return \
     [Case('Debug spec'),

@@ -7,6 +7,7 @@ class Case(PGCase):
     self.__generator = generator
     self.__args = [str(x) for x in args]
     self._temppath = os.path.join(os.path.split(__file__)[0], 'temp')
+    self.result['case'] = str(self)
   
   def __str__(self):
     return '{0}({1})'.format(self.__generator, ', '.join(self.__args))
@@ -24,7 +25,7 @@ class Case(PGCase):
 
 def getcases(debugOnly = False):
   if debugOnly:
-    return []
+    return [Case('elevatorverification', n) for n in range(3, 4)]
   return \
     [Case('elevatorverification', n) for n in range(3, 8)] + \
     [Case('elevatorverification', '-u', n) for n in range(3, 8)] + \

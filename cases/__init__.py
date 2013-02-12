@@ -7,6 +7,7 @@ import re
 import tools
 import pool
 import sys
+from tools import OutOfMemory, Timeout
 
 TIMEOUT = 12*60*60 # 12 hours for getting info
 LPSTOOLS_TIMEOUT = TIMEOUT
@@ -25,6 +26,13 @@ PGSOLVER_MEMLIMIT = MEMLIMIT
 SOLVE_MEMLIMIT = MEMLIMIT
 
 RETURN_EXISTING = True
+
+def cleanResult(result):
+  '''Clean result for saving the output, i.e. remove stdout and stderr output
+     from the dictionary if desired'''
+  del result['out']
+  del result['err']
+  return result
 
 class TempObj(pool.Task):
   def __init__(self):
@@ -62,9 +70,9 @@ class TempObj(pool.Task):
 class PGCase(TempObj):
   def __init__(self):
     super(PGCase, self).__init__()
-    self.sizes = {}
-    self.times = {}
-    self.solutions = {}
+    self.result = {}
+    self.result['pginfo'] = None
+    self.result['yamlfile'] = None
     self.__solvepg = None
     self.__solvebes = None
 
@@ -72,23 +80,29 @@ class PGCase(TempObj):
     raise NotImplementedError()
 
   def __collectInfo(self, pgfile):
-    '''Reduce the PG modulo equiv using pgconvert.'''
+    '''Gather information from the parity game.'''
     if RETURN_EXISTING:
-      yamlfile = self._name("yaml")
-      if os.path.exists(yamlfile) and os.path.getsize(yamlfile) > 0:
-          yamlfile = self._newTempFilename("yaml")
+      self.result['yamlfile'] = self._name("yaml")
+      if os.path.exists(self.result['yamlfile']) and os.path.getsize(self.result['yamlfile']) > 0:
+          self.result['yamlfile'] = self._newTempFilename("yaml")
     else:
-      yamlfile = self._newTempFilename("yaml")
+      self.result['yamlfile'] = self._newTempFilename("yaml")
 
-    tools.pginfo('-v', '-m', '30000', '-n', '2', pgfile, yamlfile, memlimit=PGINFO_MEMLIMIT, timeout=PGINFO_TIMEOUT)
-    return yamlfile
+    try:
+      result = tools.pginfo('-v', '-m', '30000', '-n', '2', pgfile, self.result['yamlfile'], memlimit=PGINFO_MEMLIMIT, timeout=PGINFO_TIMEOUT, timed=True)
+    except (Timeout, OutOfMemory):
+      # Handle gracefully, recording the output using the normal ways
+      pass
+    self.result['pginfo'] = cleanResult(result)
 
   def phase0(self, log):
     self.__pgfile = self._makePGfile(log, RETURN_EXISTING)
     log.debug('Collecting information from {0}'.format(self))
     self.__collectInfo(self.__pgfile)
-    
+      
 class PBESCase(PGCase):
+  def __init__(self):
+    super(PBESCase, self).__init__()
   
   def _makePBES(self):
     raise NotImplementedError() 
@@ -103,7 +117,8 @@ class PBESCase(PGCase):
     pbes.write(self._makePBES())
     pbes.close()
     pgfile = self._newTempFilename('gm')
-    tools.pbes2bes('-s0', '-v', '-rjittyc', '-opgsolver', pbes.name, pgfile, memlimit=PBES2BES_MEMLIMIT, timeout=PBES2BES_TIMEOUT)
+    result = tools.pbes2bes('-s0', '-v', '-rjittyc', '-opgsolver', pbes.name, pgfile, memlimit=PBES2BES_MEMLIMIT, timeout=PBES2BES_TIMEOUT, timed=True)
+    self.result['pbes2bes'] = cleanResult(result)
     os.unlink(pbes.name)
     return pgfile
 

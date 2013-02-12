@@ -1,4 +1,4 @@
-from cases import tools, TempObj, PGCase, MLSOLVER_TIMEOUT, MLSOLVER_MEMLIMIT
+from cases import tools, TempObj, PGCase, MLSOLVER_TIMEOUT, MLSOLVER_MEMLIMIT, cleanResult, Timeout, OutOfMemory
 import formulas
 import os
 
@@ -11,6 +11,7 @@ class MLSolverCase(PGCase):
     self.__kwargs = kwargs
     self._temppath = os.path.join(os.path.split(__file__)[0], 'temp')
     self._prefix = '{0}{1}{2}'.format(self.__name, ('_'.join('{0}={1}'.format(k,v) for k,v in self.__kwargs.items())), "_compact" if self.__compact else "")
+    self.result['compact'] = str(self.__compact)
   
   def __str__(self):
     argstr = ', '.join(['{0}={1}'.format(k, v) for k, v in self.__kwargs.items()])
@@ -21,13 +22,18 @@ class MLSolverCase(PGCase):
     if pgfile and returnExisting:
       return pgfile
     
-    pgfilename = self._newTempFilename('gm')
-    if self.__compact:
-      result = tools.mlsolver('-ve', '--option', 'comp', '--{0}'.format(self.formula.mode()), self.formula.type(), '-pg', self.formula.form(**self.__kwargs), timeout=MLSOLVER_TIMEOUT, memlimit=MLSOLVER_MEMLIMIT)
+    try:
+      pgfilename = self._newTempFilename('gm')
+      if self.__compact:
+        result = tools.mlsolver('-ve', '--option', 'comp', '--{0}'.format(self.formula.mode()), self.formula.type(), '-pg', self.formula.form(**self.__kwargs), timeout=MLSOLVER_TIMEOUT, memlimit=MLSOLVER_MEMLIMIT, timed=True)
+      else:
+        result = tools.mlsolver('-ve', '--{0}'.format(self.formula.mode()), self.formula.type(), '-pg', self.formula.form(**self.__kwargs), timeout=MLSOLVER_TIMEOUT, memlimit=MLSOLVER_MEMLIMIT, timed=True)
       pg = result['out']
-    else:
-      result = tools.mlsolver('-ve', '--{0}'.format(self.formula.mode()), self.formula.type(), '-pg', self.formula.form(**self.__kwargs), timeout=MLSOLVER_TIMEOUT, memlimit=MLSOLVER_MEMLIMIT)
-      pg= result['out']
+    except (Timeout, OutOfMemory) as e:
+      self.result['mlsolver'] = cleanResult(e.result)
+      raise e
+    self.result['mlsolver'] = cleanResult(result)
+
     pgfile = open(pgfilename, 'w')
     pgfile.write(pg)
     pgfile.close()
@@ -39,6 +45,9 @@ class Case(TempObj):
     self.__name = name
     self.__kwargs = kwargs
     self._prefix = '{0}{1}'.format(self.__name, ('_'.join('{0}={1}'.format(k,v) for k,v in self.__kwargs.items())))
+    self.result = {}
+    self.result['case'] = str(self)
+    self.result['instances'] = []
   
   def __str__(self):
     argstr = ', '.join(['{0}={1}'.format(k, v) for k, v in self.__kwargs.items()])
@@ -50,10 +59,14 @@ class Case(TempObj):
     
     for compact in True, False:
       self.subtasks.append(MLSolverCase(self.__name, compact, **self.__kwargs))
+      
+  def phase1(self, log):
+    for r in self.results:
+      self.result['instances'].append(r.result) 
 
 def getcases(debugOnly = False):
   if debugOnly:
-    return []
+    return [Case('Include', n=n) for n in range(2,3)]
   return \
     [Case('Include', n=n) for n in range(1,9)] + \
     [Case('Nester', n=n) for n in range(1,9)] + \
