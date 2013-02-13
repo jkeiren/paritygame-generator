@@ -12,6 +12,8 @@ class MLSolverCase(PGCase):
     self._temppath = os.path.join(os.path.split(__file__)[0], 'temp')
     self._prefix = '{0}{1}{2}'.format(self.__name, ('_'.join('{0}={1}'.format(k,v) for k,v in self.__kwargs.items())), "_compact" if self.__compact else "")
     self.result['compact'] = str(self.__compact)
+    self.result['generation'] = {}
+    self.result['generation']['tool'] = "mlsolver"
   
   def __str__(self):
     argstr = ', '.join(['{0}={1}'.format(k, v) for k, v in self.__kwargs.items()])
@@ -29,11 +31,13 @@ class MLSolverCase(PGCase):
       else:
         result = tools.mlsolver('-ve', '--{0}'.format(self.formula.mode()), self.formula.type(), '-pg', self.formula.form(**self.__kwargs), timeout=MLSOLVER_TIMEOUT, memlimit=MLSOLVER_MEMLIMIT, timed=True)
       pg = result['out']
+      self.result['generation']['times'] = result['times']
+      self.result['generation']['memory'] = result['memory']
     except (Timeout, OutOfMemory) as e:
-      self.result['mlsolver'] = cleanResult(e.result)
+      self.result['generation']['times'] = e.result['times']
+      self.result['generation']['memory'] = e.result['memory']
       raise e
-    self.result['mlsolver'] = cleanResult(result)
-
+  
     pgfile = open(pgfilename, 'w')
     pgfile.write(pg)
     pgfile.close()

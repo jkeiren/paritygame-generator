@@ -24,14 +24,22 @@ class ToolException(Exception):
       self.__cmdline, self.__ret, self.__result['err'], self.__result['out'])
 
 class Timeout(Exception):
-  def __init__(self, result):
+  def __init__(self, cmdline, result):
     super(Timeout, self).__init__()
+    self.__cmdline = ' '.join(cmdline)
     self.result = result
     
+  def __str__(self):
+    return 'The commandline "{0}" timed out'.format(self.__cmdline)
+    
 class OutOfMemory(Exception):
-  def __init__(self, result):
+  def __init__(self, cmdline, result):
     super(OutOfMemory, self).__init__()
+    self.__cmdline = ' '.join(cmdline)
     self.result = result
+    
+  def __str__(self):
+    return 'The commandline "{0}" exceeded the memory limit'.format(self.__cmdline)
 
 class Tool(object):
   def __init__(self, name, log, hastimings = True, filter_=None, timed=False, timeout=None, memlimit=None):
@@ -84,13 +92,13 @@ class Tool(object):
       m = re.search(TIMEOUT_RE, self.result['err'], re.DOTALL)
       if m is not None:
         self.result['times'] = 'timeout'
-        raise Timeout(self.result)
+        raise Timeout(cmdline, self.result)
       
       MEMLIMIT_RE = 'MEM CPU (?P<cpu>\d+[.]\d*) MEM (?P<mem>\d+) MAXMEM (?P<maxmem>\d+) STALE (?P<stale>\d+)'
       m = re.search(MEMLIMIT_RE, self.result['err'], re.DOTALL)
       if m is not None:
         self.result['memory'] = 'outofmemory'
-        raise OutOfMemory(self.result)
+        raise OutOfMemory(cmdline, self.result)
       
       raise ToolException(cmdline, p.returncode, self.result)
             

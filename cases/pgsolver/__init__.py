@@ -1,5 +1,5 @@
 import os
-from cases import PGCase, tools, PGSOLVER_MEMLIMIT, PGSOLVER_TIMEOUT
+from cases import PGCase, tools, PGSOLVER_MEMLIMIT, PGSOLVER_TIMEOUT, Timeout, OutOfMemory
 
 class Case(PGCase):
   def __init__(self, generator, *args):
@@ -8,6 +8,8 @@ class Case(PGCase):
     self.__args = [str(x) for x in args]
     self._temppath = os.path.join(os.path.split(__file__)[0], 'temp')
     self.result['case'] = str(self)
+    self.result['generation'] = {}
+    self.result['generation']['tool'] = "pgsolver"
   
   def __str__(self):
     return '{0}({1})'.format(self.__generator, ', '.join(self.__args))
@@ -18,9 +20,16 @@ class Case(PGCase):
       return pgfile
     
     pgfile = self._newTempFile('gm')
-    result = tools.Tool(self.__generator, log, memlimit=PGSOLVER_MEMLIMIT, timeout=PGSOLVER_TIMEOUT)(*self.__args)
-    pgfile.write(result['out'])
-    pgfile.close()
+    try:
+      result = tools.Tool(self.__generator, log, memlimit=PGSOLVER_MEMLIMIT, timeout=PGSOLVER_TIMEOUT, timed=True, hastimings=False)(*self.__args)
+      pgfile.write(result['out'])
+      pgfile.close()
+      self.result['generation']['times'] = result['times']
+      self.result['generation']['memory'] = result['memory']
+    except (Timeout, OutOfMemory) as e:
+      self.result['generation']['times'] = e.result['times']
+      self.result['generation']['memory'] = e.result['memory']
+      raise e
     return pgfile.name
 
 def getcases(debugOnly = False):

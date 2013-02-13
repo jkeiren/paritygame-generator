@@ -17,7 +17,7 @@ class Property(PBESCase):
     self.lps = lps
     self.mcffile = mcf
     self.renfile = os.path.splitext(self.mcffile)[0] + '.ren'
-    self.result['property'] = description
+    self.result['property'] = str(self)
   
   def __str__(self):
     return os.path.splitext(os.path.split(self.mcffile)[1])[0]
