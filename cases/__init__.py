@@ -149,6 +149,44 @@ class PGInfoTaskGroup(TempObj):
         self.result['statistics'][k]['times'] = r.result['pginfo']['times']
         self.result['statistics'][k]['memory'] = r.result['pginfo']['memory']
 
+class SolveTask(pool.Task):
+  def __init__(self, name, filename, *args):
+    super(SolveTask, self).__init__()
+    self.__pgfile = filename
+    self.__opts = list(args)
+    self.result['timing'] = 'error'
+    self.result['size'] = 'error'
+    self.result['solution'] = 'unknown'
+    self.name = name
+  
+  def run(self, log):
+    if self.name.startswith('pbespgsolve'):
+      self.run_pbespgsolve(log)
+    else:
+      self.run_pgsolver(log)
+  
+  def run_pbespgsolve(self, log):
+    try:      
+      result = tools.pbespgsolve(self.__pgfile, *self.__opts, timed=True, timeout=SOLVE_TIMEOUT)
+      self.result['times'] = result['times']
+      self.result['solution'] = result['out'].strip()
+    except tools.Timeout:
+      log.info('Timeout')
+      self.time = 'timeout'
+      self.result = 'unknown'
+  
+  def run_pgsolver(self, log):
+    try:
+      opts = self.__opts + ['-v', '2', self.__pgfile]
+      result = tools.pgsolver(*opts, timeout=SOLVE_TIMEOUT)
+      self.result['times'] = re.search('Overall\s*\|.*?\s+([0-9.]+) sec', result['out'], re.DOTALL).group(1)
+      self.result['solution'] = re.search('Player (0|1) wins from nodes:[^}]*?[{,]0[,}]', result['out'], re.DOTALL).group(1)
+      self.result['solution'] = 'true' if self.result['solution'] == '0' else 'false'
+    except tools.Timeout:
+      log.info('Timeout')
+      self.result['times'] = 'timeout'    
+      self.result['solution'] = 'unknown'  
+
 class PGCase(TempObj):
   def __init__(self):
     super(PGCase, self).__init__()
@@ -160,6 +198,30 @@ class PGCase(TempObj):
 
   def _makePGfile(self, log, overwriteExisting):
     raise NotImplementedError()
+
+  def __reduce(self, pgfile, equiv):
+    '''Reduce the PG modulo equiv using pgconvert.'''
+    reduced = self._newTempFilename('gm')
+    result, timing, sizes = tools.pgconvert('-ve{0}'.format(equiv), pgfile, reduced, timed=True)
+    self.sizes['orig'] = {'vertices': sizes['vorig'], 'edges': sizes['eorig']}
+    self.sizes[equiv] = {'vertices': sizes['vred'], 'edges': sizes['ered']}
+    self.times.setdefault(equiv, {})['reduction'] = timing[0]['timing']['reduction']
+    return reduced
+
+  def __solve(self, pgfile):
+    '''Solve besfile using pbsespgsolve and pgsolver.'''
+    self.subtasks = [
+      SolveTask('pbespgsolve (spm)', pgfile),
+      SolveTask('pbespgsolve (recursive)', pgfile, '-srecursive'),
+#      SolveTask('pgsolver (optimized spm)', pgfile, '-sp'),
+      SolveTask('pgsolver (optimized recursive)', pgfile, '-re'),
+      SolveTask('pgsolver (optimized bigstep)', pgfile, '-bs'),
+#      SolveTask('pgsolver (optimized strategy improvement)', pgfile, '-si'),
+#      SolveTask('pgsolver (unoptimized spm)', pgfile, '-sp', '-dgo', '-dsg', '-dlo'),
+#      SolveTask('pgsolver (unoptimized recursive)', pgfile, '-re', '-dgo', '-dsg', '-dlo'),
+#      SolveTask('pgsolver (unoptimized bigstep)', pgfile, '-bs', '-dgo', '-dsg', '-dlo'),
+#      SolveTask('pgsolver (unoptimized strategy improvement)', pgfile, '-si', '-dgo', '-dsg', '-dlo')
+    ]
 
   def phase0(self, log):
     try:
