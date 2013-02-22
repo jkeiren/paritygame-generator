@@ -10,6 +10,8 @@ import sys
 import yaml
 from tools import OutOfMemory, Timeout
 
+LARGE_GRAPH=100000
+
 TIMEOUT = 12*60*60 # 12 hours for getting info
 LPSTOOLS_TIMEOUT = TIMEOUT
 MLSOLVER_TIMEOUT= 60*60
@@ -82,7 +84,10 @@ class PGInfoJob(TempObj):
   def phase0(self, log):
     yamlfile = self._newTempFilename("yaml")
     try:
-      result = tools.pginfo('-v', self.__pgfile, yamlfile, '--{0}'.format(self.__option), memlimit=PGINFO_MEMLIMIT, timeout=PGINFO_TIMEOUT, timed=True)
+      if self.__option in ['bfs', 'dfs']:
+        log.warning("Not recording Queue/Stack sizes if number of vertices exceeds {0}".format(LARGE_GRAPH))
+      result = tools.pginfo('-v', self.__pgfile, yamlfile, '--{0}'.format(self.__option), '--max-for-expensive={0}'.format(LARGE_GRAPH), memlimit=PGINFO_MEMLIMIT, timeout=PGINFO_TIMEOUT, timed=True)
+
     except (Timeout, OutOfMemory) as e:
       # Handle gracefully, recording the output using the normal ways
       result = e.result
@@ -119,10 +124,17 @@ class PGCase(TempObj):
     raise NotImplementedError()
 
   def phase0(self, log):
-    self.__pgfile = self._makePGfile(log, RETURN_EXISTING)
-    log.debug('Collecting information from {0}'.format(self))
-    for opt in self.__optmap:
-      self.subtasks.append(PGInfoJob(self.__pgfile, opt))
+    try:
+      self.__pgfile = self._makePGfile(log, RETURN_EXISTING)
+      log.debug('Collecting information from {0}'.format(self))
+      for opt in self.__optmap:
+        self.subtasks.append(PGInfoJob(self.__pgfile, opt))
+    except (Timeout, OutOfMemory):
+      # If parity game generation fails due to timeout or out of memory,
+      # we still record it in the output.
+      # Therefore we need to make sure that the exception does not get through
+      # to the calling layers.
+      pass
     
   def phase1(self, log):
     log.debug('Collecting results from {0}'.format(self))
