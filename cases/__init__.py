@@ -69,10 +69,10 @@ class TempObj(pool.Task):
     fn = self._newTempFile(ext, extraprefix)
     fn.close()
     return fn.name
-  
-class PGInfoJob(TempObj):
+
+class PGInfoTask(TempObj):
   def __init__(self, pgfile, option):
-    super(PGInfoJob, self).__init__()
+    super(PGInfoTask, self).__init__()
     self.__pgfile = pgfile
     self.__option = option
     self._temppath = os.path.join(os.path.split(__file__)[0], 'temp')
@@ -95,14 +95,15 @@ class PGInfoJob(TempObj):
     self.result['pginfo'] = cleanResult(result)
     self.result['output'] = yaml.load(open(yamlfile).read())
     os.unlink(yamlfile)
-  
-class PGCase(TempObj):
-  def __init__(self):
-    super(PGCase, self).__init__()
+
+
+class PGInfoTaskGroup(TempObj):
+  def __init__(self, pgfile):
+    super(PGInfoTaskGroup, self).__init__()
+    self.__pgfile = pgfile
+    
     self.result = {}
     self.result['statistics'] = {}
-    self.__solvepg = None
-    self.__solvebes = None
     # Map all options to the string with which they are indexed in the
     # resulting YAML output of pginfo.
     self.__optmap = {}
@@ -120,21 +121,10 @@ class PGCase(TempObj):
     self.__optmap["ad"] = "Alternation depth (priority ordering)"
     self.__optmap["neighbourhoods=3"] = "Neighbourhood"
 
-  def _makePGfile(self, log, overwriteExisting):
-    raise NotImplementedError()
-
   def phase0(self, log):
-    try:
-      self.__pgfile = self._makePGfile(log, RETURN_EXISTING)
-      log.debug('Collecting information from {0}'.format(self))
-      for opt in self.__optmap:
-        self.subtasks.append(PGInfoJob(self.__pgfile, opt))
-    except (Timeout, OutOfMemory):
-      # If parity game generation fails due to timeout or out of memory,
-      # we still record it in the output.
-      # Therefore we need to make sure that the exception does not get through
-      # to the calling layers.
-      pass
+    log.debug('Collecting information from {0}'.format(self))
+    for opt in self.__optmap:
+      self.subtasks.append(PGInfoTask(self.__pgfile, opt))
     
   def phase1(self, log):
     log.debug('Collecting results from {0}'.format(self))
@@ -158,7 +148,31 @@ class PGCase(TempObj):
         self.result['statistics'][k] = {}
         self.result['statistics'][k]['times'] = r.result['pginfo']['times']
         self.result['statistics'][k]['memory'] = r.result['pginfo']['memory']
-        
+
+class PGCase(TempObj):
+  def __init__(self):
+    super(PGCase, self).__init__()
+    self.result = {}
+    self.result['statistics'] = {}
+    self.result['solution'] = {}
+    self.__solvepg = None
+    self.__solvebes = None
+
+  def _makePGfile(self, log, overwriteExisting):
+    raise NotImplementedError()
+
+  def phase0(self, log):
+    try:
+      self.__pgfile = self._makePGfile(log, RETURN_EXISTING)  
+      log.debug('Collecting information from {0}'.format(self))
+      self.subtasks.append(PGInfoTaskGroup(self.__pgfile))
+    except (Timeout, OutOfMemory):
+      # If parity game generation fails due to timeout or out of memory,
+      # we still record it in the output.
+      # Therefore we need to make sure that the exception does not get through
+      # to the calling layers.
+      pass
+    
 class PBESCase(PGCase):
   def __init__(self):
     super(PBESCase, self).__init__()
