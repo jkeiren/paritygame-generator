@@ -1,13 +1,18 @@
 import optparse
 import logging
 import yaml
+import tempfile
 import sys
 import os
 from cases import modelchecking, equivchecking, pgsolver, mlsolver
 from cases.pool import TaskPool 
 
+_OUTPUT_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'output_data')
+
 def run(poolsize, resultsfile, debugOnly=False):
   log = logging.getLogger('experiments')
+  if not os.path.exists(_OUTPUT_DIR):
+    os.mkdir(_OUTPUT_DIR)
 
   casesdone = []
   if resultsfile is not None:
@@ -18,7 +23,7 @@ def run(poolsize, resultsfile, debugOnly=False):
         if results:
           log.info('Skipping the following cases because results for them were found:')
           for case in results:
-            casesdone.append(case['case'])
+            casesdone.append(case)
         else:
           casesdone = []
       except (AttributeError, TypeError):
@@ -38,9 +43,15 @@ def run(poolsize, resultsfile, debugOnly=False):
     log.info('Submitting cases and waiting for results.')
     for case in pool.run(*tasks):
       if isinstance(case, (modelchecking.Case, equivchecking.Case, pgsolver.Case, mlsolver.Case)):
+        name = os.path.join(_OUTPUT_DIR, '{0}.yaml'.format(case.result['case'].replace('/','_').replace(' ','_')))
+        yamlfile = open(name, 'w')
+        yamlfile.write(yaml.dump(case.result, default_flow_style = False))
+        yamlfile.close()
+        
         log.info('Got result for {0}'.format(case))
-        resultsfile.write(yaml.dump([case.result], default_flow_style = False))
+        resultsfile.write(yaml.dump([case.result['case']], default_flow_style = False))
         resultsfile.flush()
+
     log.info('Done.')
 
     pool.close()
