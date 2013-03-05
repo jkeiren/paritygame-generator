@@ -23,7 +23,8 @@
 sort Position = struct Red | Blue | Empty;
 
 map N,M:Pos;
-eqn N=4; M=4;
+eqn N=${width};
+    M=${height};
 
 sort Row=List(Position);
      Board=List(Row);
@@ -100,10 +101,15 @@ proc Hex(b:Board,RedMoves:Bool)=
        Wins(Blue,b) -> BlueWins.Hex(b,RedMoves)+
        delta;
 
-init Hex([[Empty,Empty,Empty,Empty],
-          [Empty,Empty,Empty,Empty],
-          [Empty,Empty,Empty,Empty],
-          [Empty,Empty,Empty,Empty]], true);
+map initialBoard: Nat # Nat -> Board;
+    initialRow: Nat -> Row;
+var n,m: Nat;
+eqn initialBoard(n, 0) = [];
+    (m > 0) -> initialBoard(n, m) = initialRow(n) |> initialBoard(n, Int2Nat(m-1));
+    initialRow(0) = [];
+    (n > 0) -> initialRow(n) = Empty |> initialRow(Int2Nat(n-1));
+
+init Hex(initialBoard(N,M), true);
 
 
 

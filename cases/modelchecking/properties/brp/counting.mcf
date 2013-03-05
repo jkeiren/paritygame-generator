@@ -1,0 +1,15 @@
+nu X. ( 
+  [true]X 
+&& forall l:List(D). (val(l != []) => [r1(l)](
+nu Y(n:Nat = 0,l':List(D) = l). ( [c9(lost)]Y(n+1,l') 
+                     && 
+                       [!( c9(lost) || s1(I_nok) || s1(I_dk) || exists d:D,i:Ind.s4(d,i))]Y(n,l') 
+                     && 
+                       (val(l' != []) => forall dbla:D. [exists i:Ind. s4(dbla,i)](val(dbla == head(l')) && Y(0,tail(l'))))
+                     &&
+                       (val(!(n < MAX && l' != [])) || (<true*.exists i:Ind. s4(head(l'),i)>true))
+
+                     )
+ )
+)
+)

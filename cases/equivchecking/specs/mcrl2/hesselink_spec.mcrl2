@@ -1,0 +1,30 @@
+% Wait-free handshake register
+% Based on Wim Hesselink's article "Invariants for the construction of 
+% a handshake register", Information Processing Letters 68 (1998) 173-177
+% Modelled by Arjan Mooij with some help from Aad Mathijssen, adapted by
+% Jan Friso Groote
+
+% This file contains the specification of the system.
+%
+% Original filename hes98_spec1.mcrl2
+
+% --- Data type -------
+
+sort D = struct ${data};     % for this algorithm a limited choice of values
+                             % seem reasonable.
+
+% --- Internal safe register. Whenever it tries to internally read while a process 
+% --- is writing, it will deliver a random number 
+
+act begin_write, end_read: D;
+    end_write, begin_read,int;
+
+proc Register(readstatus,writestatus:Pos,v,vw,vr:D)=
+     (readstatus==1) -> begin_read.Register(2,writestatus,v,vw,vr)+
+     (readstatus==2)  -> int.Register(3,writestatus,v,vw,v)+
+     (readstatus==3) -> end_read(vr).Register(1,writestatus,v,vw,vr)+
+     (writestatus==1) -> sum w:D.begin_write(w).Register(readstatus,2,v,w,vr)+
+     (writestatus==2) -> int.Register(readstatus,3,vw,vw,vr)+
+     (writestatus==3) -> end_write.Register(readstatus,1,v,vw,vr);
+
+init  hide({int},Register(1,1,d1,d1,d1));

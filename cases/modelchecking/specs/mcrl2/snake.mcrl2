@@ -22,8 +22,8 @@
 sort Position = struct Black | White | Empty;
 sort Direction = struct Up | Right | Down | Left;
 map N,M:Pos;
-eqn N=5;
-    M=5;
+eqn N=${width};
+    M=${height};
 
 sort Row=List(Position);
      Board=List(Row);

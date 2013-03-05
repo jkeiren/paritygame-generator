@@ -1,0 +1,95 @@
+% Wait-free handshake register
+% Based on Wim Hesselink's article "Invariants for the construction of 
+% a handshake register", Information Processing Letters 68 (1998) 173-177
+% Modelled by Arjan Mooij with some help from Aad Mathijssen, adapted by
+% Jan Friso Groote
+%
+% original file name hes98_impl3.mcrl2
+%
+
+% --- Data type -------
+
+sort D = struct ${data};     % for this algorithm a limited choice of values
+                             % seem reasonable.
+
+% --- Internal safe register. Whenever it tries to internally read while a process 
+% --- is writing, it will deliver a random number 
+
+act begin_w2s, begin_w2s_w, begin_w2s_s: Bool # Bool # D;
+    end_w2s, end_w2s_w, end_w2s_s: Bool # Bool;
+    begin_s2r, begin_s2r_s, begin_s2r_r: Bool # Bool;
+    end_s2r, end_s2r_s, end_s2r_r: Bool # Bool # D;
+    int;
+
+proc Y(i,j:Bool,readstatus,writestatus:Pos,v,vw,vr:D)=
+     (readstatus==1) -> begin_s2r_s(i, j).Y(i,j,2,writestatus,v,vw,vr)+
+     (readstatus==2 && writestatus==1) -> int.Y(i,j,3,writestatus,v,vw,v)+
+     (readstatus==2 && writestatus!=1) -> sum w:D.int.Y(i,j,3,writestatus,v,vw,w)+
+     (readstatus==3) -> end_s2r_s(i,j,vr).Y(i,j,1,writestatus,v,vw,vr)+
+     (writestatus==1) -> sum w:D.begin_w2s_s(i,j,w).Y(i,j,readstatus,2,v,w,vr)+
+     (writestatus==2) -> int.Y(i,j,readstatus,3,vw,vw,vr)+
+     (writestatus==3) -> end_w2s_s(i,j).Y(i,j,readstatus,1,vw,vw,vr);
+
+act readA, readA_, readA__, writeA, writeA_, writeA__,
+    readB, readB_, readB__, writeB, writeB_, writeB__:Bool;
+    readC, readC_, readC__, writeC, writeC_, writeC__:Bool#Bool;
+
+proc A(a:Bool)=readA_(a).A(a)+sum a:Bool.writeA_(a).A(a);
+
+proc B(b:Bool)=readB_(b).B(b)+sum b:Bool.writeB_(b).B(b);
+
+proc C(i:Bool,c:Bool)=readC_(i,c).C(i,c)+sum c:Bool.writeC_(i,c).C(i,c);
+     
+     
+% --- Handshake register -------
+
+act begin_write, end_read: D;
+    end_write, begin_read;
+
+proc Writer=
+       sum x:D.begin_write(x).
+       sum a:Bool.readB(!a).
+       sum a':Bool.readC(a,a').
+       begin_w2s_w(a,!a',x).
+       end_w2s_w(a,!a').
+       writeC(a,!a').
+       writeA(a).
+       end_write.
+       Writer;
+
+proc Reader=
+       begin_read.
+       sum b:Bool.readA(b).
+       writeB(b).
+       sum c:Bool.readC(b,c).
+       begin_s2r_r(b,c).sum y:D.end_s2r_r(b,c,y).
+       end_read(y).
+       Reader;
+
+
+init 
+   allow({begin_write, end_write, begin_read, end_read},
+     hide({begin_w2s, end_w2s, begin_s2r, end_s2r,
+           readA__,readB__,readC__,writeA__,writeB__,writeC__,int},
+      allow({begin_write, end_write, begin_read, end_read,
+             begin_w2s,end_w2s,begin_s2r,end_s2r,
+             readA__,readB__,readC__,writeA__,writeB__,writeC__,int},
+      comm({begin_w2s_w|begin_w2s_s->begin_w2s, 
+            end_w2s_w|end_w2s_s->end_w2s, 
+            begin_s2r_s|begin_s2r_r->begin_s2r, 
+            end_s2r_s|end_s2r_r->end_s2r,
+            readA|readA_->readA__,
+            readB|readB_->readB__,
+            readC|readC_->readC__,
+            writeA|writeA_->writeA__,
+            writeB|writeB_->writeB__,
+            writeC|writeC_->writeC__},
+
+        Reader||Writer||
+        Y(true,true,1,1,d1,d1,d1) || Y(true,false,1,1,d1,d1,d1)|| 
+        Y(false,true,1,1,d1,d1,d1)|| Y(false,false,1,1,d1,d1,d1)||
+        A(true) || B(true) || C(true,true) || C(false,true) 
+         )
+       )
+    )
+  );

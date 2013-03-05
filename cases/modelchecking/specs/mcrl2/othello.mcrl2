@@ -1,5 +1,5 @@
 % This specification describes the game `Othello' or `Reversi', which is a two
-% player board game. There is a board of N = R + 1 by M = C + 1 where N and M 
+% player board game. There is a board of N = 2*R + 2 by M = 2*C + 2 where N and M 
 % are generally both 8 (i.e., R=C=3). One player has white pieces (W) and the
 % other has red pieces (R). Initially, the board is set up as follows (in the
 % example, R=C=2):
@@ -116,8 +116,8 @@ eqn % Directions to search in, as (n,m) vectors
 
     % Initial board:
     B = pad([pad([piece(red), piece(white)], 0), pad([piece(white),piece(red)], 0)], 0); 
-    R = 1;          % Extra rows
-    C = 1;          % Extra columns
+    R = ${extrarows};          % Extra rows
+    C = ${extracolumns};       % Extra columns
     N = 2 * R + 2;  % Board height
     M = 2 * C + 2;  % Board width
     n < C -> pad(r, n) = pad(empty |> r <| empty, n + 1);

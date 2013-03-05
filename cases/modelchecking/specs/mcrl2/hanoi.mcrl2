@@ -7,7 +7,7 @@ sort Disk = Pos;
      Stack = List(Disk);
 
 map disks: Pos;
-eqn disks = 12;
+eqn disks = ${ndisks};
 
 map initStack: Stack;
 map initStack_impl: Nat # Stack -> Stack;

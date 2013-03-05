@@ -1,0 +1,8 @@
+[true*] 
+  forall w: D .
+    [begin_write(w)]
+    [!end_write*]
+    [end_write]
+    [(!(exists d:D.begin_write(d)))*]
+    forall w': D . [end_read(w')]val(w == w')
+    

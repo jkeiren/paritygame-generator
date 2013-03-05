@@ -14,12 +14,35 @@
 % Absence of deadlock can be checked via translation to pbes and removing the
 % data domain D using pbesparelm.
 
+% Common data
+sort D = struct ${data};
+
+% For SWP, n is the size of the window.
+% Buffer and SWP are branching bisimilar if the capacity=2*windowsize.
 map  n: Pos;
 eqn  n=${windowsize};
 
-sort %D = Nat;
-     D = struct ${data};
-     DBuf = List(D);
+% Capacity. Only used for Buffer
+map capacity: Pos;
+eqn capacity=${capacity};
+
+% Data specific for ABP and ABP BW
+sort Error = struct e; % To allow comparison with ABP/ABP_BW
+
+% Data specific for CABP and Par
+sort error = struct ce | ae; % To allow comparison with CABP
+     Frame = struct frame(getd : D, getb: Bool);
+     ACK = struct ac;
+
+% Data specific for Par
+sort TimerSignal = struct st | ti | eto;
+
+% Data specific for Onebit
+sort FrameOB=struct frame(dat:D,bit1:Bool,bit2:Bool);
+     Status=struct read?eq_read | choice?eq_choice | del?eq_del;
+
+% Data specific for SWP
+sort DBuf = List(D);
      BBuf = List(Bool);
 map  empty: BBuf;
      insert: D#Nat#DBuf -> DBuf;

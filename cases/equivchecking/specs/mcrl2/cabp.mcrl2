@@ -1,0 +1,108 @@
+% This file contains the cabp protocol as described in section 3.5 of
+% S. Mauw and G.J. Veltink, editors, Algebraic Specification of Communication
+% Protocols, Cambridge tracts in theoretical computer science 36, Cambridge
+% University Press, Cambridge 1993.
+%
+% With two data elements, the generated transition system has 464 states.
+%
+% It is interesting to see the clustering of this statespace in ltsgraph.
+% The statespace after branching bisimulation contains 3 states and is
+% exactly the same as the reduced statespace of the alternating bit protocol.
+%
+% Note that it is interesting to compare the differences of the alternating
+% bit protocol (abp), concurrent alternating bit protocol (cabp), one bit
+% sliding window protocol (onebit) and the alternating bit protocol with
+% independent acknowledgements (par), regarding the implementation, the
+% the number of states and the external behaviour.
+
+% Common data
+sort D = struct ${data};
+
+% For SWP, n is the size of the window.
+% Buffer and SWP are branching bisimilar if the capacity=2*windowsize.
+map  n: Pos;
+eqn  n=${windowsize};
+
+% Capacity. Only used for Buffer
+map capacity: Pos;
+eqn capacity=${capacity};
+
+% Data specific for ABP and ABP BW
+sort Error = struct e; % To allow comparison with ABP/ABP_BW
+
+% Data specific for CABP and Par
+sort error = struct ce | ae; % To allow comparison with CABP
+     Frame = struct frame(getd : D, getb: Bool);
+     ACK = struct ac;
+
+% Data specific for Par
+sort TimerSignal = struct st | ti | eto;
+
+% Data specific for Onebit
+sort FrameOB=struct frame(dat:D,bit1:Bool,bit2:Bool);
+     Status=struct read?eq_read | choice?eq_choice | del?eq_del;
+
+% Data specific for SWP
+sort DBuf = List(D);
+     BBuf = List(Bool);
+map  empty: BBuf;
+     insert: D#Nat#DBuf -> DBuf;
+     insert: Bool#Nat#BBuf -> BBuf;
+     nextempty_mod: Nat#BBuf#Nat#Pos -> Nat;
+     q1,q2:DBuf;
+var  d,d':D; i,j,m: Nat; q: DBuf; c,c':Bool; n':Pos; b:BBuf;
+eqn  q1 = ${initialwindow};
+     q2 = q1;
+     empty = ${emptywindow};
+     i == 0 -> insert(d,i,q) = d |> tail(q);
+     i > 0 -> insert(d,i, d'|>q) = d' |> insert(d,Int2Nat(i-1),q);
+     i == 0 -> insert(c,i,b) = c |> tail(b);
+     i > 0 -> insert(c,i,c'|>b) = c' |> insert(c,Int2Nat(i-1),b);
+     b.(i mod n') && m>0 ->
+         nextempty_mod(i,b,m,n') = nextempty_mod((i+1) mod 2*n', b,Int2Nat(m-1),n');
+     !(b.(i mod n') && m>0) ->
+         nextempty_mod(i,b,m,n') =i mod 2*n';
+
+%------------------------------  act   -----------------------------------
+
+act   r1,s2,r,s : D;
+      c3,r3,s3,c4,r4,s4 : Frame;
+      c4,r4,s4,c7,r7,s7 : error;
+      c5,r5,s5,c8,r8,s8 : ACK;
+      c6,r6,s6,c7,r7,s7 : Bool;
+      skip;
+
+%------------------------------  proc  -----------------------------------
+
+
+proc  S = RM(false);
+      RM(b:Bool) = sum d:D.r1(d).SF(frame(d,b));
+      SF(f:Frame) = s3(f).SF(f) + r8(ac).RM(!getb(f));
+
+      K  = sum f:Frame.r3(f).K(f);
+      K(f:Frame) = (skip.s4(f)+skip.s4(ce)+skip).K;
+
+      R = RF(false);
+      RF(b:Bool) = sum d:D.r4(frame(d,b)).s2(d).s5(ac).RF(!b)
+                     + sum d:D. r4(frame(d,!b)).RF(b)
+                     + r4(ce).RF(b);
+
+      AS = AS(true);
+      AS(b:Bool) = r5(ac).AS(!b) + s6(b).AS(b);
+
+      L = sum b:Bool.r6(b) . L(b);
+      L(b:Bool) = ( skip.s7(b) + skip.s7(ae) + skip ).L;
+
+      AR = AR(false);
+      AR(b:Bool) = ( r7(ae) + r7(!b)) . AR(b)
+                   + r7(b).s8(ac).AR(!b);
+
+init
+  rename({r1->r, s2->s},
+   hide({c3,c4,c5,c6,c7,c8,skip},
+     allow({c3,c4,c5,c6,c7,c8,skip,r1,s2},
+       comm({r3|s3->c3, r4|s4->c4, r5|s5->c5, r6|s6->c6,
+                r7|s7->c7, r8|s8->c8},
+               S || K || R || AS || L || AR ))));
+
+

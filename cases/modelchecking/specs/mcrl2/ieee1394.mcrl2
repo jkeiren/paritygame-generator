@@ -24,7 +24,7 @@
 % Number of parties
 % Beware, this is not used consistently in the specification!
 map N: Nat;
-eqn N = 2;
+eqn N = ${nparties};
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%% DATA/CONTROL/ACKNOWLEDGE ELEMENTS AND THERE CRC COMPUTATION %%%
@@ -32,26 +32,30 @@ eqn N = 2;
 
 sort CHECK = struct bottom | check;
 
-sort DATA = struct d1 | d2;
+sort DATA = struct ${data};
 
 map  crc : DATA -> CHECK;
 
-eqn  crc(d1)=check;
-     crc(d2)=check;
+%eqn  crc(d1)=check;
+%     crc(d2)=check;
+var d: DATA;
+eqn crc(d)=check;
 
-sort HEADER = struct h1 | h2;
-
+sort HEADER = struct ${headers};
 
 map  crc : HEADER -> CHECK;
+var h:HEADER;
+%eqn  crc(h1)=check;
+%     crc(h2)=check;
+eqn crc(h)=check;
 
-eqn  crc(h1)=check;
-     crc(h2)=check;
-
-sort ACK = struct a1 | a2;
+sort ACK = struct ${acks};
 
 map  crc : ACK -> CHECK;
-eqn  crc(a1)=check;
-     crc(a2)=check;
+%eqn  crc(a1)=check;
+%     crc(a2)=check;
+var a:ACK;
+eqn crc(a)=check;
 
 sort SIGNAL = struct sig(getdest:Nat) ? is_dest |
                      sig(gethead:HEADER,gethcrc:CHECK) ? is_header |
@@ -424,7 +428,7 @@ proc LINK(n:Nat,i:Nat)=Link0(n,i,void);
                   allow({LDreq,LDcon,LDind,LDres,arbresgap,losesignal,internal,
                               rPDind|sPDind,rPDreq|sPDreq,rPAcon|sPAcon,
                     rPAreq|sPAreq,rPCind|sPCind},
-                          BUS(2) || LINK(2,0) || LINK(2,1)))));
+                          BUS(N) || ${links}))));
 
 init P1394(N);
 

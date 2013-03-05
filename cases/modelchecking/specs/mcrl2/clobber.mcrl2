@@ -27,8 +27,8 @@
 sort Position = struct Black | White | Empty;
 sort Direction = struct Up | Right | Down | Left;
 map N,M:Pos;
-eqn N=4;
-    M=4;
+eqn N=${width};
+    M=${height};
 
 sort Row=List(Position);
      Board=List(Row);
@@ -111,8 +111,16 @@ proc Clobber(b:Board,WhiteMoves:Bool)=
              WhiteWins.Clobber(b,WhiteMoves)+
        delta;
 
+% Initial board is such that position x,y gets a black piece if (x+y) is even.
+map initialBoard: Nat # Nat -> Board;
+    initialBoardYOffset: Nat # Nat # Nat -> Board;
+    initialRowXYOffset: Nat # Nat # Nat -> Row;
+var n,m,x,y: Nat;
+eqn initialBoard(n,m) = initialBoardYOffset(0,n,m);
+    initialBoardYOffset(y,n,0) = [];
+    (m>0) -> initialBoardYOffset(y,n,m) = initialRowXYOffset(0,y,n) |> initialBoardYOffset(y+1, n, Int2Nat(m-1));
+    initialRowXYOffset(x,y,0) = [];
+    (n>0 && ((x+y) mod 2) == 0) -> initialRowXYOffset(x,y,n) = Black |> initialRowXYOffset(x+1, y, Int2Nat(n-1));
+    (n>0 && ((x+y) mod 2) != 0) -> initialRowXYOffset(x,y,n) = White |> initialRowXYOffset(x+1, y, Int2Nat(n-1));
 
-init Clobber([[Black,White,Black,White],
-              [White,Black,White,Black],
-              [Black,White,Black,White],
-              [White,Black,White,Black]],false);
+init Clobber(initialBoard(N,M),false);
