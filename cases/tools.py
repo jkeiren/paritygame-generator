@@ -1,11 +1,9 @@
 import subprocess
 import logging
 import tempfile
-import threading
 import yaml
 import os
 import re
-import resource
 
 __LOG = logging.getLogger('tools')
 logging.raiseExceptions = False

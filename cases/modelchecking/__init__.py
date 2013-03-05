@@ -110,12 +110,7 @@ class GameCase(Case):
 def getcases(debugOnly = False):
   if(debugOnly):
     return \
-      [Case('Debug spec')] + \
-      [GameCase('Othello', width=4, height=4)] + \
-      [GameCase('Clobber', width=4, height=4)] + \
-      [GameCase('Snake', width=4, height=4)] + \
-      [GameCase('Hex', width=4, height=4)] + \
-      [GameCase('Domineering', width=4, height=4)]
+      [Case('Debug spec')]
   
   return \
     [Case('Debug spec')] + \

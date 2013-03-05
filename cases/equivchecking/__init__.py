@@ -4,6 +4,7 @@ import traceback
 import multiprocessing
 import os
 from cases import tools, PBESCase, TempObj, LPSTOOLS_MEMLIMIT, LPSTOOLS_TIMEOUT
+import specs
 
 class EquivCase(PBESCase):
   def __init__(self, description, lpsfile1, lpsfile2, equiv, temppath):
@@ -69,39 +70,31 @@ class Case(TempObj):
       os.unlink(filename)
     for r in self.results:
       self.result['instances'].append(r.result)
+
+class SameParamCase(Case):
+  def __init__(self, name1, name2, **kwargs):
+    super(SameParamCase, self).__init__(
+      '{0}/{1} ({2})'.format(name1, name2, ' '.join('{0}={1}'.format(k,v) for k,v in kwargs.items())),
+      specs.get(name1).mcrl2(**kwargs),
+      specs.get(name2).mcrl2(**kwargs))
+  
   
 def getcases(debugOnly = False):
-  import specs
-  buf = specs.get('Buffer')
-  abp = specs.get('ABP')
-  abp_bw = specs.get('ABP(BW)')
-  cabp = specs.get('CABP')
-  par = specs.get('Par')
-  onebit = specs.get('Onebit')
-  swp = specs.get('SWP')
-  hesselink_spec = specs.get('Hesselink (Specification)')
-  hesselink = specs.get('Hesselink (Implementation)')
   if debugOnly:
     return \
-      [Case('Buffer/ABP (c={1}, d={2})'.format(w,c,d), buf.mcrl2(w,c,d), abp.mcrl2(w,c,d))
-         for (w,c,d) in [(1,1,2)]]
+      [SameParamCase('Buffer', 'ABP', windowsize=1, capacity=1, datasize=2)]
+     
   else:
     return \
-      [Case('ABP/ABP(BW) (d={2})'.format(w,c,d), abp.mcrl2(w,c,d), abp_bw.mcrl2(w,c,d))
-         for (w,c,d) in [(1,2,data) for data in [2, 3, 4] ]] + \
-      [Case('ABP(BW)/CABP (d={2})'.format(w,c,d), abp_bw.mcrl2(w,c,d), cabp.mcrl2(w,c,d))
-         for (w,c,d) in [(1,2,data) for data in [2, 3, 4] ]] + \
-      [Case('ABP/CABP (d={2})'.format(w,c,d), abp.mcrl2(w,c,d), cabp.mcrl2(w,c,d))
-         for (w,c,d) in [(1,2,data) for data in [2, 3, 4] ]] + \
-      [Case('Buffer/ABP (c={1}, d={2})'.format(w,c,d), buf.mcrl2(w,c,d), abp.mcrl2(w,c,d))
-         for (w,c,d) in [(1,1,2)]] + \
-      [Case('Buffer/ABP(BW) (c={1}, d={2})'.format(w,c,d), buf.mcrl2(w,c,d), abp_bw.mcrl2(w,c,d))
-         for (w,c,d) in [(1,1,2)]] + \
-      [Case('Buffer/CABP (c={1}, d={2})'.format(w,c,d), buf.mcrl2(w,c,d), cabp.mcrl2(w,c,d))
-         for (w,c,d) in [(1,1,2)]] + \
-      [Case('Buffer/Par (c={1}, d={2})'.format(w,c,d), buf.mcrl2(w,c,d), par.mcrl2(w,c,d))
-         for (w,c,d) in [(1,1,2)]] + \
-      [Case('Buffer/Onebit (c={1}, d={2})'.format(w,c,d), buf.mcrl2(w,c,d), onebit.mcrl2(w,c,d))
-         for (w,c,d) in [(1,2,2)]] + \
-      [Case('ABP/ABP (d={2})'.format(w,c,d), abp.mcrl2(w,c,d), abp.mcrl2(w,c,d))
-         for (w,c,d) in [(1,2,data) for data in [2, 3, 4, 5, 6, 7, 8] ] ]
+      [SameParamCase('ABP', 'ABP(BW)', windowsize=1, capacity=1, datasize=d) for d in range(2,5)] + \
+      [SameParamCase('ABP(BW)', 'CABP', windowsize=1, capacity=1, datasize=d) for d in range(2,5)] + \
+      [SameParamCase('ABP', 'CABP', windowsize=1, capacity=1, datasize=d) for d in range(2,5)] + \
+      [SameParamCase('Buffer', 'ABP', windowsize=1, capacity=1, datasize=d) for d in range(2,5)] + \
+      [SameParamCase('Buffer', 'ABP(BW)', windowsize=1, capacity=1, datasize=d) for d in range(2,5)] + \
+      [SameParamCase('Buffer', 'CABP', windowsize=1, capacity=1, datasize=d) for d in range(2,5)] + \
+      [SameParamCase('Buffer', 'Par', windowsize=1, capacity=1, datasize=d) for d in range(2,5)] + \
+      [SameParamCase('Buffer', 'Onebit', windowsize=1, capacity=2, datasize=d) for d in range(2,5)] + \
+      [SameParamCase('Buffer', 'SWP', windowsize=1, capacity=2, datasize=d) for d in range(2,5)] + \
+      [SameParamCase('ABP', 'ABP', windowsize=1, capacity=1, datasize=d) for d in range(2,9)] + \
+      [SameParamCase('Hesselink (Specification)', 'Hesselink (Implementation', datasize=d) for d in range(2,6)]
+      

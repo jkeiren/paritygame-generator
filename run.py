@@ -1,7 +1,6 @@
 import optparse
 import logging
 import yaml
-import tempfile
 import sys
 import os
 from cases import modelchecking, equivchecking, pgsolver, mlsolver
