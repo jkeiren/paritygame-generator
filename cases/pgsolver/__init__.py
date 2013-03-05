@@ -6,6 +6,7 @@ class Case(PGCase):
     super(Case, self).__init__()
     self.__generator = generator
     self.__args = [str(x) for x in args]
+    self._outdir = os.path.join(os.path.split(__file__)[0], 'data')
     self._temppath = os.path.join(os.path.split(__file__)[0], 'temp')
     self.result['case'] = str(self)
     self.result['generation'] = {}

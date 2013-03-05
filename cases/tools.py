@@ -119,7 +119,7 @@ class Tool(object):
       self.result['times']['total'] = t['sys'] + t['user']
   
   def __apply_filter(self, filter_):
-    m = re.search(filter_, self.error, re.DOTALL)
+    m = re.search(filter_, self.result['err'], re.DOTALL)
     if m is not None:
       self.result['filter'] = m.groupdict()
     else:

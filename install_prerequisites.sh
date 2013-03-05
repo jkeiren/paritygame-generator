@@ -58,7 +58,7 @@ cmake ../pginfo \
   -DYAMLCPP_INCLUDE_DIR=${installdir}/include/yaml-cpp \
   -DYAMLCPP_LIBRARY=${installdir}/lib/libyaml-cpp.so 
 make -j${nthreads}
-cp pginfo ${tooldir}/install/bin
+ln -s `pwd`/pginfo ${tooldir}/install/bin
 
 # mCRL2
 #######
@@ -75,6 +75,19 @@ cmake ../mcrl2-201210.1 -DCMAKE_INSTALL_PREFIX=${tooldir}/install \
   -DMCRL2_ENABLE_GUI_TOOLS=OFF \
   -DMCRL2_MAN_PAGES=OFF
 make install -j${nthreads}
+
+# pgconvert
+###########
+cd ${tooldir}
+git clone https://github.com/tue-mdse/pgconvert.git
+mkdir pgconvert-build
+cd pgconvert-build
+cmake ../pgconvert \
+  -DCMAKE_INSTALL_PREFIX=${tooldir}/install \
+  -DMCRL2_INCLUDE=${tooldir}/install/include \
+  -DMCRL2_LIB=${tooldir}/install/lib/mcrl2
+make -j${nthreads}
+ln -s `pwd`/pgconvert ${tooldir}/install/bin
 
 ## OCaml (needed for PGSolver)
 ##############################

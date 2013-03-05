@@ -34,7 +34,7 @@ def run(poolsize, resultsfile, debugOnly=False):
   pool = TaskPool(poolsize)
   try:
     tasks = []
-    for task in mlsolver.getcases(debugOnly) + modelchecking.getcases(debugOnly) + equivchecking.getcases(debugOnly) + pgsolver.getcases(debugOnly):
+    for task in modelchecking.getcases(debugOnly) + equivchecking.getcases(debugOnly) + pgsolver.getcases(debugOnly) + mlsolver.getcases(debugOnly):
       if str(task) in casesdone:
         log.info('- ' + str(task))
       else:

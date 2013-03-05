@@ -30,6 +30,7 @@ class Case(TempObj):
     super(Case, self).__init__()
     self.__desc = description
     self.__files = []
+    self._outdir = os.path.join(os.path.split(__file__)[0], 'data')
     self._temppath = os.path.join(os.path.split(__file__)[0], 'temp')
     self._prefix = self.__desc
     self.spec1 = spec1

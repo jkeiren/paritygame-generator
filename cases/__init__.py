@@ -54,28 +54,36 @@ class TempObj(pool.Task):
       return self._name(ext, extraprefix)
     else:
       return None
-  
-  def _newTempFile(self, ext, extraprefix=""):
-    if not os.path.exists(self._temppath):
-      os.makedirs(self._temppath)
+    
+  def _newTempFileDir(self, temppath, ext, extraprefix=""):
+    if not os.path.exists(temppath):
+      os.makedirs(temppath)
     name = self._name(ext, extraprefix)
     if self._prefix <> "" and not os.path.exists(name):
       fn = open(name, 'w+b')
       return fn
     else:
-      return tempfile.NamedTemporaryFile(dir=self._temppath, prefix=self.__escape(self._prefix)+extraprefix, suffix='.'+ext, delete=False)
+      return tempfile.NamedTemporaryFile(dir=temppath, prefix=self.__escape(self._prefix)+extraprefix, suffix='.'+ext, delete=False)
+  
+  def _newTempFile(self, ext, extraprefix=""):
+    return self._newTempFileDir(self._temppath, ext, extraprefix)
     
-  def _newTempFilename(self, ext, extraprefix=""):
-    fn = self._newTempFile(ext, extraprefix)
+  def _newTempFilenameDir(self, temppath, ext, extraprefix=""):
+    fn = self._newTempFileDir(temppath, ext, extraprefix)
     fn.close()
     return fn.name
+  
+  def _newTempFilename(self, ext, extraprefix=""):
+    return self._newTempFilenameDir(self._temppath, ext, extraprefix)
 
 class PGInfoTask(TempObj):
-  def __init__(self, pgfile, option):
+  def __init__(self, pgfile, option, prefix, temppath, outdir):
     super(PGInfoTask, self).__init__()
     self.__pgfile = pgfile
     self.__option = option
-    self._temppath = os.path.join(os.path.split(__file__)[0], 'temp')
+    self._prefix = prefix
+    self._temppath = temppath
+    self._outdir = outdir
     self.result = {}
     self.result['pginfo'] = None
     self.result['yamlfile'] = None
@@ -98,12 +106,15 @@ class PGInfoTask(TempObj):
 
 
 class PGInfoTaskGroup(TempObj):
-  def __init__(self, pgfile):
+  def __init__(self, pgfile, prefix, temppath, outdir):
     super(PGInfoTaskGroup, self).__init__()
+    self._prefix = prefix
+    self._temppath = temppath
+    self._outdir = outdir
+    
     self.__pgfile = pgfile
     
     self.result = {}
-    self.result['statistics'] = {}
     # Map all options to the string with which they are indexed in the
     # resulting YAML output of pginfo.
     self.__optmap = {}
@@ -124,10 +135,11 @@ class PGInfoTaskGroup(TempObj):
   def phase0(self, log):
     log.debug('Collecting information from {0}'.format(self))
     for opt in self.__optmap:
-      self.subtasks.append(PGInfoTask(self.__pgfile, opt))
+      self.subtasks.append(PGInfoTask(self.__pgfile, opt, self._prefix, self._temppath, self._outdir))
     
   def phase1(self, log):
     log.debug('Collecting results from {0}'.format(self))
+    data = {}
     for r in self.results:
       if 'output' in r.result.keys() and r.result['output']:
         assert(len(r.result['output']) == 1)
@@ -135,25 +147,32 @@ class PGInfoTaskGroup(TempObj):
         (k,v) = r.result['output'].items()[0]
         
         if isinstance(v, dict):
-          self.result['statistics'][k] = v
+          data[k] = v
         else:
-          self.result['statistics'][k] = {}
-          self.result['statistics'][k]['value'] = v
+          data[k] = {}
+          data[k]['value'] = v
       
           
-        self.result['statistics'][k]['times'] = r.result['pginfo']['times']
-        self.result['statistics'][k]['memory'] = r.result['pginfo']['memory']
+        data[k]['times'] = r.result['pginfo']['times']
+        data[k]['memory'] = r.result['pginfo']['memory']
       else: # No output recorded
         k = self.__optmap[r.result['option']]
-        self.result['statistics'][k] = {}
-        self.result['statistics'][k]['times'] = r.result['pginfo']['times']
-        self.result['statistics'][k]['memory'] = r.result['pginfo']['memory']
+        data[k] = {}
+        data[k]['times'] = r.result['pginfo']['times']
+        data[k]['memory'] = r.result['pginfo']['memory']
+    
+    name = self._newTempFilenameDir(self._outdir, 'yaml')
+    yamlfile = open(name, 'w')
+    yamlfile.write(yaml.dump(data, default_flow_style = False))
+    yamlfile.close()
+    self.result['pginfo']['datafile'] = name
 
 class SolveTask(pool.Task):
   def __init__(self, name, filename, *args):
     super(SolveTask, self).__init__()
     self.__pgfile = filename
     self.__opts = list(args)
+    self.result = {}
     self.result['timing'] = 'error'
     self.result['size'] = 'error'
     self.result['solution'] = 'unknown'
@@ -192,30 +211,47 @@ class PGCase(TempObj):
     super(PGCase, self).__init__()
     self.result = {}
     self.result['statistics'] = {}
-    self.result['solution'] = {}
+    self.result['solutions'] = {}
+    self.result['sizes'] = {}
+    self.result['times'] = {}
+    self._outdir = os.path.join(os.path.split(__file__)[0], 'data')
     self.__solvepg = None
     self.__solvebes = None
+    self.__error = False
 
   def _makePGfile(self, log, overwriteExisting):
     raise NotImplementedError()
+  
+  def __collectResults(self, name):
+    for task in self.results:
+      print task.result
+      if task.result.has_key('solution'):
+        self.result['times'].setdefault(name, {})[task.name] = task.result['times']
+        self.result['solutions'].setdefault(name, {})[task.name] = task.result['solution']
+      else:
+        self.result['files'].setdefault(name, {})[task.name] = task.result['file']
+  
+  def __info(self, pgfile):
+    self.subtasks.append(PGInfoTaskGroup(pgfile, self._prefix, self._temppath, self._outdir))
 
   def __reduce(self, pgfile, equiv):
     '''Reduce the PG modulo equiv using pgconvert.'''
     reduced = self._newTempFilename('gm')
-    result, timing, sizes = tools.pgconvert('-ve{0}'.format(equiv), pgfile, reduced, timed=True)
-    self.sizes['orig'] = {'vertices': sizes['vorig'], 'edges': sizes['eorig']}
-    self.sizes[equiv] = {'vertices': sizes['vred'], 'edges': sizes['ered']}
-    self.times.setdefault(equiv, {})['reduction'] = timing[0]['timing']['reduction']
+    result = tools.pgconvert('-ve{0}'.format(equiv), pgfile, reduced, timed=True)
+    self.result['sizes']['orig'] = {'vertices': result['filter']['vorig'], 'edges': result['filter']['eorig']}
+    self.result['sizes'][equiv] = {'vertices': result['filter']['vred'], 'edges': result['filter']['ered']}
+    self.result['times'].setdefault(equiv, {})['reduction'] = result['times']#['reduction']
     return reduced
 
   def __solve(self, pgfile):
     '''Solve besfile using pbsespgsolve and pgsolver.'''
     self.subtasks = [
-      SolveTask('pbespgsolve (spm)', pgfile),
-      SolveTask('pbespgsolve (recursive)', pgfile, '-srecursive'),
+      SolveTask('pbespgsolve', pgfile)
+#      SolveTask('pbespgsolve (spm)', pgfile),
+#      SolveTask('pbespgsolve (recursive)', pgfile, '-srecursive'),
 #      SolveTask('pgsolver (optimized spm)', pgfile, '-sp'),
-      SolveTask('pgsolver (optimized recursive)', pgfile, '-re'),
-      SolveTask('pgsolver (optimized bigstep)', pgfile, '-bs'),
+#      SolveTask('pgsolver (optimized recursive)', pgfile, '-re'),
+#      SolveTask('pgsolver (optimized bigstep)', pgfile, '-bs'),
 #      SolveTask('pgsolver (optimized strategy improvement)', pgfile, '-si'),
 #      SolveTask('pgsolver (unoptimized spm)', pgfile, '-sp', '-dgo', '-dsg', '-dlo'),
 #      SolveTask('pgsolver (unoptimized recursive)', pgfile, '-re', '-dgo', '-dsg', '-dlo'),
@@ -225,15 +261,63 @@ class PGCase(TempObj):
 
   def phase0(self, log):
     try:
-      self.__pgfile = self._makePGfile(log, RETURN_EXISTING)  
-      log.debug('Collecting information from {0}'.format(self))
-      self.subtasks.append(PGInfoTaskGroup(self.__pgfile))
+      self.__pgfile = self._makePGfile(log, RETURN_EXISTING)
     except (Timeout, OutOfMemory):
       # If parity game generation fails due to timeout or out of memory,
       # we still record it in the output.
       # Therefore we need to make sure that the exception does not get through
       # to the calling layers.
+      self.__error = True
       pass
+    
+    log.debug('Collecting information from original {0}'.format(self))
+    self.__info(self.__pgfile)
+    log.debug('Solving original {0}'.format(self))
+    self.__solve(self.__pgfile)
+  
+  def phase1(self, log):
+    self.__collectResults('bisim')
+    log.debug('Reducing original modulo bisim ({0})'.format(self))
+    self._prefix = self._prefix + '_bisim'
+    bisimpg = self.__reduce(self.__pgfile, 'bisim')
+    log.debug('Collecting information from bisim {0}'.format(self))
+    self.__info(bisimpg)
+    log.debug('Solving stut {0}'.format(self))
+    self.__solve(bisimpg)
+  
+  def phase2(self, log):
+    self.__collectResults('bisim')
+    log.debug('Reducing original modulo  ({0})'.format(self))
+    self._prefix = self._prefix.replace('_bisim', '_fmib')
+    fmibpg = self.__reduce(self.__pgfile, 'fmib')
+    log.debug('Collecting information from fmib {0}'.format(self))
+    self.__info(fmibpg)
+    log.debug('Solving fmib {0}'.format(self))
+    self.__solve(fmibpg)
+      
+  def phase3(self, log):
+    self.__collectResults('fmib')
+    log.debug('Reducing original modulo  ({0})'.format(self))
+    self._prefix = self._prefix.replace('_fmib', '_stut')
+    stutpg = self.__reduce(self.__pgfile, 'stut')
+    log.debug('Collecting information from stut {0}'.format(self))
+    self.__info(stutpg)
+    log.debug('Solving stut {0}'.format(self))
+    self.__solve(stutpg)
+      
+  def phase4(self, log):
+    self.__collectResults('stut')
+    log.debug('Reducing original modulo  ({0})'.format(self))
+    self._prefix = self._prefix.replace('_stut', '_gstut')
+    gstutpg = self.__reduce(self.__pgfile, 'gstut')
+    log.debug('Collecting information from gstut {0}'.format(self))
+    self.__info(gstutpg)
+    log.debug('Solving gstut {0}'.format(self))
+    self.__solve(gstutpg)  
+    
+  def phase5(self, log):
+    self.__collectResults('gstut')
+    log.debug('Done {0}'.format(self))
     
 class PBESCase(PGCase):
   def __init__(self):
