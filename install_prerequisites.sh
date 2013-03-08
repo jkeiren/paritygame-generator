@@ -63,12 +63,15 @@ ln -s `pwd`/pginfo ${tooldir}/install/bin
 # mCRL2
 #######
 cd ${tooldir}
-wget http://www.mcrl2.org/download/release/mcrl2-201210.1.tar.gz
-tar -zxvf mcrl2-201210.1.tar.gz
+#wget http://www.mcrl2.org/download/release/mcrl2-201210.1.tar.gz
+#tar -zxvf mcrl2-201210.1.tar.gz
 #cd mcrl2-201210.1
-mkdir mcrl2-build
-cd mcrl2-build
-cmake ../mcrl2-201210.1 -DCMAKE_INSTALL_PREFIX=${tooldir}/install \
+mkdir mcrl2
+cd mcrl2
+svn checkout https://svn.win.tue.nl/repos/MCRL2/trunk src
+mkdir build
+cd build
+cmake ../src -DCMAKE_INSTALL_PREFIX=${tooldir}/install \
   -DMCRL2_STAGE_ROOTDIR=`pwd`/stage \
   -DMCRL2_ENABLE_EXPERIMENTAL=ON \
   -DMCRL2_ENABLE_DEPRECATED=ON \
