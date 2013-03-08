@@ -173,8 +173,8 @@ class SolveTask(pool.Task):
     self.__pgfile = filename
     self.__opts = list(args)
     self.result = {}
-    self.result['timing'] = 'error'
-    self.result['size'] = 'error'
+    self.result['times'] = 'unknown'
+    self.result['sizes'] = 'unknown'
     self.result['solution'] = 'unknown'
     self.name = name
   
@@ -191,8 +191,7 @@ class SolveTask(pool.Task):
       self.result['solution'] = result['out'].strip()
     except tools.Timeout:
       log.info('Timeout')
-      self.time = 'timeout'
-      self.result = 'unknown'
+      self.result['times'] = 'timeout'
   
   def run_pgsolver(self, log):
     try:
@@ -203,8 +202,7 @@ class SolveTask(pool.Task):
       self.result['solution'] = 'true' if self.result['solution'] == '0' else 'false'
     except tools.Timeout:
       log.info('Timeout')
-      self.result['times'] = 'timeout'    
-      self.result['solution'] = 'unknown'  
+      self.result['times'] = 'timeout'  
 
 class PGCase(TempObj):
   def __init__(self):
@@ -224,7 +222,6 @@ class PGCase(TempObj):
   
   def __collectResults(self, name):
     for task in self.results:
-      print task.result
       if task.result.has_key('solution'):
         self.result['times'].setdefault(name, {})[task.name] = task.result['times']
         self.result['solutions'].setdefault(name, {})[task.name] = task.result['solution']
@@ -246,7 +243,7 @@ class PGCase(TempObj):
   def __solve(self, pgfile):
     '''Solve besfile using pbsespgsolve and pgsolver.'''
     self.subtasks = [
-      SolveTask('pbespgsolve', pgfile)
+      SolveTask('pbespgsolve', pgfile, '-srecursive')
 #      SolveTask('pbespgsolve (spm)', pgfile),
 #      SolveTask('pbespgsolve (recursive)', pgfile, '-srecursive'),
 #      SolveTask('pgsolver (optimized spm)', pgfile, '-sp'),
@@ -276,7 +273,7 @@ class PGCase(TempObj):
     self.__solve(self.__pgfile)
   
   def phase1(self, log):
-    self.__collectResults('bisim')
+    self.__collectResults('original')
     log.debug('Reducing original modulo bisim ({0})'.format(self))
     self._prefix = self._prefix + '_bisim'
     bisimpg = self.__reduce(self.__pgfile, 'bisim')
