@@ -1,0 +1,5 @@
+forall p: ProcessId .
+  !<true*>(<c_copy>true && 
+           <lockempty(p)>true && 
+           <homequeueempty(p)>true && 
+           <remotequeueempty(p)>true)

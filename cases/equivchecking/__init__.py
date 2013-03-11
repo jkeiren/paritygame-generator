@@ -7,9 +7,10 @@ from cases import tools, PBESCase, TempObj, LPSTOOLS_MEMLIMIT, LPSTOOLS_TIMEOUT
 import specs
 
 class EquivCase(PBESCase):
-  def __init__(self, description, lpsfile1, lpsfile2, equiv, temppath):
+  def __init__(self, description, lpsfile1, lpsfile2, equiv, temppath, outpath):
     super(EquivCase, self).__init__()
     self.__desc = description
+    self._outpath = outpath
     self._temppath = temppath
     self._prefix = self.__desc + "eq=%s" % (equiv)
     self.lpsfile1 = lpsfile1
@@ -30,7 +31,7 @@ class Case(TempObj):
     super(Case, self).__init__()
     self.__desc = description
     self.__files = []
-    self._outdir = os.path.join(os.path.split(__file__)[0], 'data')
+    self._outpath = os.path.join(os.path.split(__file__)[0], 'data')
     self._temppath = os.path.join(os.path.split(__file__)[0], 'temp')
     self._prefix = self.__desc
     self.spec1 = spec1
@@ -62,7 +63,7 @@ class Case(TempObj):
   def phase0(self, log):
     lpsfile1, lpsfile2 = self.__linearise(log)
     for equiv in ['strong-bisim', 'weak-bisim', 'branching-bisim', 'branching-sim']:
-      self.subtasks.append(EquivCase(self.__desc, lpsfile1, lpsfile2, equiv, self._temppath))
+      self.subtasks.append(EquivCase(self.__desc, lpsfile1, lpsfile2, equiv, self._temppath, self._outpath))
     self.__files = [lpsfile1, lpsfile2]
   
   def phase1(self, log):
@@ -86,16 +87,34 @@ def getcases(debugOnly = False):
       [SameParamCase('Buffer', 'ABP', windowsize=1, capacity=1, datasize=2)]
      
   else:
+    datarange = [2,4,8,16]
     return \
-      [SameParamCase('ABP', 'ABP(BW)', windowsize=1, capacity=1, datasize=d) for d in range(2,5)] + \
-      [SameParamCase('ABP(BW)', 'CABP', windowsize=1, capacity=1, datasize=d) for d in range(2,5)] + \
-      [SameParamCase('ABP', 'CABP', windowsize=1, capacity=1, datasize=d) for d in range(2,5)] + \
-      [SameParamCase('Buffer', 'ABP', windowsize=1, capacity=1, datasize=d) for d in range(2,5)] + \
-      [SameParamCase('Buffer', 'ABP(BW)', windowsize=1, capacity=1, datasize=d) for d in range(2,5)] + \
-      [SameParamCase('Buffer', 'CABP', windowsize=1, capacity=1, datasize=d) for d in range(2,5)] + \
-      [SameParamCase('Buffer', 'Par', windowsize=1, capacity=1, datasize=d) for d in range(2,5)] + \
-      [SameParamCase('Buffer', 'Onebit', windowsize=1, capacity=2, datasize=d) for d in range(2,5)] + \
-      [SameParamCase('Buffer', 'SWP', windowsize=1, capacity=2, datasize=d) for d in range(2,5)] + \
-      [SameParamCase('ABP', 'ABP', windowsize=1, capacity=1, datasize=d) for d in range(2,9)] + \
-      [SameParamCase('Hesselink (Specification)', 'Hesselink (Implementation', datasize=d) for d in range(2,6)]
+      [SameParamCase('Buffer', 'ABP', windowsize=1, capacity=1, datasize=d) for d in datarange] + \
+      [SameParamCase('Buffer', 'ABP(BW)', windowsize=1, capacity=1, datasize=d) for d in datarange] + \
+      [SameParamCase('Buffer', 'CABP', windowsize=1, capacity=1, datasize=d) for d in datarange] + \
+      [SameParamCase('Buffer', 'Par', windowsize=1, capacity=1, datasize=d) for d in datarange] + \
+      [SameParamCase('Buffer', 'Onebit', windowsize=1, capacity=c, datasize=d) for d in datarange for c in range(1,3)] + \
+      [SameParamCase('Buffer', 'SWP', windowsize=1, capacity=c, datasize=d) for d in datarange for c in range(1,3)] + \
+      [SameParamCase('ABP', 'ABP', windowsize=1, capacity=1, datasize=d) for d in datarange] + \
+      [SameParamCase('ABP', 'ABP(BW)', windowsize=1, capacity=1, datasize=d) for d in datarange] + \
+      [SameParamCase('ABP', 'CABP', windowsize=1, capacity=1, datasize=d) for d in datarange] + \
+      [SameParamCase('ABP', 'Par', windowsize=1, capacity=1, datasize=d) for d in datarange] + \
+      [SameParamCase('ABP', 'Onebit', windowsize=1, capacity=1, datasize=d) for d in datarange] + \
+      [SameParamCase('ABP', 'SWP', windowsize=1, capacity=1, datasize=d) for d in datarange] + \
+      [SameParamCase('ABP(BW)', 'ABP(BW)', windowsize=1, capacity=1, datasize=d) for d in datarange] + \
+      [SameParamCase('ABP(BW)', 'CABP', windowsize=1, capacity=1, datasize=d) for d in datarange] + \
+      [SameParamCase('ABP(BW)', 'Par', windowsize=1, capacity=1, datasize=d) for d in datarange] + \
+      [SameParamCase('ABP(BW)', 'Onebit', windowsize=1, capacity=1, datasize=d) for d in datarange] + \
+      [SameParamCase('ABP(BW)', 'SWP', windowsize=1, capacity=1, datasize=d) for d in datarange] + \
+      [SameParamCase('CABP', 'Par', windowsize=1, capacity=1, datasize=d) for d in datarange] + \
+      [SameParamCase('CABP', 'Onebit', windowsize=1, capacity=1, datasize=d) for d in datarange] + \
+      [SameParamCase('CABP', 'SWP', windowsize=1, capacity=1, datasize=d) for d in datarange] + \
+      [SameParamCase('Par', 'Par', windowsize=1, capacity=1, datasize=d) for d in range(4,5)] + \
+      [SameParamCase('Par', 'Onebit', windowsize=1, capacity=1, datasize=d) for d in range(4,5)] + \
+      [SameParamCase('Par', 'SWP', windowsize=1, capacity=1, datasize=d) for d in range(4,5)] + \
+      [SameParamCase('Onebit', 'Onebit', windowsize=1, capacity=1, datasize=d) for d in range(4,5)] + \
+      [SameParamCase('Onebit', 'SWP', windowsize=1, capacity=1, datasize=d) for d in range(4,5)] + \
+      [SameParamCase('SWP', 'SWP', windowsize=1, capacity=1, datasize=d) for d in range(4,5)] + \
+      [SameParamCase('Hesselink (Specification)', 'Hesselink (Implementation)', datasize=d) for d in range(2,5) ] + \
+      [SameParamCase('Hesselink (Implementation)', 'Hesselink (Specification)', datasize=d) for d in range(2,5) ]
       

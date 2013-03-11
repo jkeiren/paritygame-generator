@@ -1,0 +1,672 @@
+sort ThreadId = struct T1 | T2 | T3;
+     ProcessId = struct P1 | P2 | P3;
+     RegionId = struct R1;
+     State = struct UNUSED | USED;
+     Region = struct RGN(id: RegionId, 
+                         home: ProcessId, 
+                         state: State, 
+                         accessorlist: List(ProcessId),
+                         data: Int,
+                         twin: Int,
+                         localt: Nat);
+map null, notnull: Int;
+    remove: ProcessId # List(ProcessId) -> List(ProcessId);
+    dec: Nat -> Nat;
+var p, q: ProcessId;
+    l: List(ProcessId);
+    n: Nat;
+eqn remove(p, []) = [];
+    p == q -> remove(p, q |> l) = l;
+    p != q -> remove(p, q |> l) = q |> remove(p, l);
+    n > 0 -> dec(n) = Int2Nat(n - 1);
+
+act s_require_faultlock, r_require_faultlock, c_require_faultlock,
+    s_require_flushlock, r_require_flushlock, c_require_flushlock,
+    s_require_serverlock, r_require_serverlock, c_require_serverlock,
+    s_require_homequeuelock, r_require_homequeuelock, c_require_homequeuelock,
+    s_require_remotequeuelock, r_require_remotequeuelock, c_require_remotequeuelock,
+    s_free_faultlock, r_free_faultlock, c_free_faultlock,
+    s_free_flushlock, r_free_flushlock, c_free_flushlock, 
+    s_free_serverlock, r_free_serverlock, c_free_serverlock,
+    s_free_homequeuelock, r_free_homequeuelock, c_free_homequeuelock,
+    s_free_remotequeuelock, r_free_remotequeuelock, c_free_remotequeuelock,
+    s_no_faultwait, r_no_faultwait, c_no_faultwait,
+    s_no_flushwait, r_no_flushwait, c_no_flushwait,
+    s_no_serverwait, r_no_serverwait, c_no_serverwait,
+    s_no_homequeuewait, r_no_homequeuewait, c_no_homequeuewait,
+    s_no_remotequeuewait, r_no_remotequeuewait, c_no_remotequeuewait,
+    s_signal_faultwait, r_signal_faultwait, c_signal_faultwait,
+    s_signal_flushwait, r_signal_flushwait, c_signal_flushwait,
+    s_signal_serverwait, r_signal_serverwait, c_signal_serverwait,
+    s_signal_homequeuewait, r_signal_homequeuewait, c_signal_homequeuewait,
+    s_signal_remotequeuewait, r_signal_remotequeuewait, c_signal_remotequeuewait,
+    s_norefresh, r_norefresh, c_norefresh
+      : ProcessId;
+
+    s_data_requiremsg, r_i_data_requiremsg, c_i_data_requiremsg,
+    s_i_data_requiremsg, r_data_requiremsg, c_o_data_requiremsg
+      : ThreadId # ProcessId # ProcessId;
+
+    % Update history 9
+    s_data_returnmsg, r_o_data_returnmsg, c_i_data_returnmsg,
+    s_o_data_returnmsg, r_data_returnmsg, c_o_data_returnmsg,
+    % end of update history 9
+    s_flush_msg, r_i_flush_msg, c_i_flush_msg,
+    s_i_flush_msg, r_flush_msg, c_o_flush_msg
+      : ThreadId # ProcessId # ProcessId # Region # Bool;
+
+    s_region_sponmigrate, r_o_region_sponmigrate, c_i_region_sponmigrate,
+    s_o_region_sponmigrate, r_region_sponmigrate, c_o_region_sponmigrate
+      : ThreadId # ProcessId # ProcessId # Region;
+
+    s_sendbackinformation, r_sendbackinformation, c_sendbackinformation,
+    s_refreshregion, r_refreshregion, c_refreshregion
+      : ThreadId # ProcessId # Region;
+
+    s_norefreshregion, r_norefreshregion, c_norefreshregion
+      : ThreadId # ProcessId;
+
+    s_sendback, r_sendback, c_sendback,
+    s_refresh, r_refresh, c_refresh
+      : ProcessId # Region;
+
+    s_signal, r_signal, c_signal
+      : ThreadId # ProcessId;
+
+    % What am I doing now?
+    nothingtoflush, 
+    iamaccessing,
+    iamflushing
+      : ThreadId;
+
+    % For verification
+    biggerthan2,	
+    r_home, s_home, c_home,
+    r_copy, s_copy, c_copy;
+
+    accessover,
+    flushover
+      : ThreadId;
+
+    lockempty,
+    homequeueempty,
+    remotequeueempty
+      : ProcessId;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Process Region
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+proc Region(pid: ProcessId, r: Region) =
+  (localt(r) <= 2) 
+  -> (
+       sum tid: ThreadId .
+       s_sendbackinformation(tid, pid, r) .
+       (
+         r_norefreshregion(tid, pid) . Region()
+       + sum r': Region . 
+           r_refreshregion(tid, pid, r') . Region(r=r')
+       )
+     + s_sendback(pid, r) .
+       (
+         r_norefresh(pid) . Region()
+       + sum r': Region .
+           r_refresh(pid, r') . Region(r=r')
+       )
+     ) 
+  <> biggerthan2 . delta
++ (pid == home(r)) 
+  -> (r_home + s_home) . Region()
+  <> (r_copy + s_copy) . Region();
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Process Processor
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+proc Processor(pid: ProcessId) =
+	sum tid: ThreadId, pid': ProcessId, r': Region, b: Bool .
+  (
+    r_data_returnmsg(tid, pid, pid', r', b) .
+    b -> (sum r: Region . 
+            r_sendback(pid, r) .
+            % April 15, needs to change the home
+            % Refresh twin as null
+            % Refresh data, Data=Data'
+            % state=UNUSED
+            s_signal(tid, pid) .
+            s_refresh(pid, RGN(id(r), pid, USED, accessorlist(r'), data(r'), null, localt(r))) . 
+            s_free_remotequeuelock(pid) .
+            Processor(pid))
+      <> (sum r: Region .
+            r_sendback(pid, r) .
+            (twin(r) == null) 
+            % The twins are null
+            % Refresh twins from the received twins
+            % Refresh datas from the received datas
+            % Always access on the datas
+            -> (s_signal(tid, pid) .
+                s_refresh(pid, RGN(id(r), home(r'), state(r'), accessorlist(r), data(r'), twin(r'), localt(r))) .
+                s_free_remotequeuelock(pid) .
+                Processor(pid))
+            % The twins are used
+            % Refresh twins, twins = patch(Twin, diff(Data', Data))
+            % Refresh datas, data = patch(Data, diff(Data', Data))
+            % And access on the twins
+            <> (s_signal(tid, pid) .
+                s_refresh(pid, RGN(id(r), home(r'), state(r'), accessorlist(r), notnull, twin(r), localt(r))) .
+                s_free_remotequeuelock(pid) .
+                Processor(pid))
+         )
+  )
+
++ sum tid: ThreadId, pid': ProcessId .
+    r_data_requiremsg(tid, pid', pid) .
+    sum r: Region .
+      r_sendback(pid, r).
+      (home(r) != pid) 
+      -> (%Update history 11
+          s_data_requiremsg(tid, pid', home(r)).
+          s_norefresh(pid).
+          s_free_homequeuelock(pid).
+          Processor(pid))
+      <> (% Someone else accesses from remote
+          (state(r) == UNUSED)
+          % If states=UNUSED
+          % Home migrates, pid' becomes the home
+          % April 15, Remove migrate message
+          -> (s_data_returnmsg(tid, pid', pid,
+                RGN(id(r), pid', UNUSED, pid' |> accessorlist(r), data(r), twin(r), localt(r)), true) .
+              s_refresh(pid, RGN(id(r), pid', UNUSED, [], data(r), twin(r), localt(r))) .
+              s_free_homequeuelock(pid) .
+              Processor(pid))
+          % Otherwise,
+          % send data back
+          <> (s_data_returnmsg(tid, pid', pid,
+                RGN(id(r), home(r), USED, pid' |> accessorlist(r), data(r), twin(r), localt(r)), false).
+              s_refresh(pid, RGN(id(r), home(r), USED, pid' |> accessorlist(r), data(r), twin(r), localt(r))) .
+              s_free_homequeuelock(pid).
+              Processor(pid)))
+
++ sum tid: ThreadId, pid': ProcessId, r': Region, b: Bool . 
+  (
+    r_flush_msg(tid, pid', pid, r', b) .
+    sum r: Region, al': List(ProcessId) . 
+    (al' == remove(pid', accessorlist(r))) ->
+    (
+      r_sendback(pid, r) .
+      % If I am not the home, forward this message
+      % Update history 11 
+      (home(r) != pid) 
+      -> (s_flush_msg(tid, pid', home(r), r', b) .
+          s_norefresh(pid) .
+          s_free_homequeuelock(pid) .
+          Processor(pid))
+      %Otherwise ......
+      <> 
+      (  
+        (!b) 
+        -> (s_signal(tid, pid) .
+            %Update history 13
+            s_refresh(pid, RGN(id(r), home(r), state(r), al', data(r), twin(r), localt(r))) .
+            s_free_homequeuelock(pid) .
+            Processor(pid))
+        <> 
+        (
+          (al' == [])
+          % There is no accessor, state=UNUSED
+          -> (s_signal(tid,pid) .
+              s_refresh(pid, RGN(id(r), home(r), UNUSED, al', data(r), twin(r), localt(r))) .
+              s_free_homequeuelock(pid) .
+              Processor(pid))
+          <> 
+          (
+            (#al' == 1)
+            -> (
+               (al' != [home(r)]) 
+               %If only one accessor and it is not me,
+               % home migrates
+               -> (s_region_sponmigrate(tid, pid, al' . 0,
+                     RGN(id(r), home(r), state(r), al', data(r), twin(r), localt(r))) .
+                   s_signal(tid, pid) .
+                   s_refresh(pid, RGN(id(r), al' . 0, UNUSED, [], data(r), twin(r), localt(r))) .
+                   s_free_homequeuelock(pid) .
+                   Processor(pid))
+               % I am the only accessor left, refresh datas
+               <> (s_signal(tid, pid) .
+                   s_refresh(pid, RGN(id(r), home(r), USED, al', data(r), twin(r), localt(r))) .
+                   s_free_homequeuelock(pid) .
+                   Processor(pid))
+               )
+            % More than accessors left, refresh datas
+            <> (s_signal(tid, pid) .
+                s_refresh(pid, RGN(id(r), home(r), state(r), al', data(r), twin(r), localt(r))) .
+                s_free_homequeuelock(pid) .
+                Processor(pid))
+  ) ) ) ) )
+
+  % Someone flush, and I become the home
++ sum tid: ThreadId, pid': ProcessId, r': Region .
+    r_region_sponmigrate(tid, pid', pid, r') .
+    sum r: Region .
+      r_sendback(pid,r).
+      s_refresh(pid, RGN(id(r), pid, USED, accessorlist(r'), data(r'), null, localt(r))) .
+      s_free_remotequeuelock(pid) .
+      Processor(pid);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Process Thread
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+proc Thread(tid: ThreadId, pid: ProcessId, wl: Set(RegionId)) =
+  iamaccessing(tid) . AccessThread(tid, pid, wl)
++ (wl != {}) -> iamflushing(tid) . FlushThread(tid, pid, wl);
+
+AccessThread(tid: ThreadId, pid: ProcessId, wl: Set(RegionId)) =
+  (R1 in wl) 
+  -> Thread(tid, pid, wl)
+  <> sum r: Region .
+       r_sendbackinformation(tid, pid, r) .
+       s_norefreshregion(tid, pid) .
+       (home(r) == pid) -> AccessHomeThread(tid, pid, wl + {R1})
+                        <> AccessRemoteThread(tid, pid, wl + {R1});
+
+AccessHomeThread(tid: ThreadId, pid: ProcessId, wl: Set(RegionId)) =
+  s_require_serverlock(pid) . 
+  (r_no_serverwait(pid) + r_signal_serverwait(pid)) .
+  sum r: Region .
+    r_sendbackinformation(tid, pid, r) .
+    (home(r) == pid) ->
+    (
+      (state(r) == UNUSED) 
+      -> (s_refreshregion(tid, pid, RGN(id(r), home(r), USED, pid |> accessorlist(r), notnull, twin(r), localt(r) + 1)) .
+          s_free_serverlock(pid) .
+          accessover(tid) . % For verification
+          Thread(tid, pid, wl))
+      % if readonly, state=SHARED
+      % otherwise, state= old state
+      <> (s_refreshregion(tid, pid, RGN(id(r), home(r), state(r), pid |> accessorlist(r), notnull, twin(r), localt(r) + 1)) .
+          s_free_serverlock(pid) .
+          accessover(tid) . % For verification
+          Thread(tid, pid, wl))
+    ) <> (
+      % faint, home has migrated
+      s_norefreshregion(tid, pid).
+      s_free_serverlock(pid).
+      AccessRemoteThread(tid, pid, wl)
+    );
+
+AccessRemoteThread(tid: ThreadId, pid: ProcessId, wl: Set(RegionId)) =
+  s_require_faultlock(pid) .
+  (r_no_faultwait(pid) + r_signal_faultwait(pid)) .
+  sum r: Region . 
+  (
+    r_sendbackinformation(tid, pid, r) .
+    (
+      (home(r) != pid) 
+      -> (s_data_requiremsg(tid, pid, home(r)) .
+          s_norefreshregion(tid, pid) .
+          sum pid': ProcessId . 
+            r_signal(tid, pid') .
+            sum newr: Region .
+              r_sendbackinformation(tid, pid, newr) .
+              s_refreshregion(tid, pid, RGN(id(newr), home(newr), state(newr), accessorlist(newr), notnull, twin(newr), localt(newr) + 1)) .
+              % r instead of r', that is the reason why counter can be greater than 2                       
+              % Switch off 
+              s_free_faultlock(pid) .
+              accessover(tid) . % For verification
+              Thread(tid, pid, wl)
+         )
+      <> (s_norefreshregion(tid, pid).
+          s_free_faultlock(pid).
+          AccessHomeThread(tid, pid, wl))
+     )
+  );
+
+FlushThread(tid: ThreadId, pid: ProcessId, wl: Set(RegionId)) =
+  (wl == {}) 
+  -> Thread(tid, pid, wl)
+  <> (s_require_flushlock(pid) .
+      (r_no_flushwait(pid) + r_signal_flushwait(pid)) .
+      sum r: Region .
+        r_sendbackinformation(tid, pid, r) .
+        (home(r) == pid) -> FlushHomeThread(tid, pid, wl - {R1}, r)
+                         <> FlushRemoteThread(tid, pid, wl - {R1}, r));
+
+FlushHomeThread(tid: ThreadId, pid: ProcessId, wl: Set(RegionId), r: Region) =
+  % If localthreads=0 (after minus 1)
+  % Need to find whether home migrates
+  % If no one uses it, state=UNUSED
+  sum al: List(ProcessId) . 
+  (al == remove(pid, accessorlist(r))) 
+  -> ((dec(localt(r)) != 0)
+  -> (s_refreshregion(tid, pid, RGN(id(r), home(r), state(r), al, data(r), twin(r), dec(localt(r)))) .
+      s_free_flushlock(pid) .
+      flushover(tid) . % For verification
+      Thread(tid, pid, wl))
+  <> ((al == []) 
+      % No accessors
+      -> (s_refreshregion(tid, pid, RGN(id(r), home(r), UNUSED, al, data(r), twin(r), dec(localt(r)))) .
+          s_free_flushlock(pid) .
+          flushover(tid) . % For verification
+          Thread(tid, pid, wl))
+      <> ((#al != 1)
+          % More than one accessor
+          -> (s_refreshregion(tid, pid, RGN(id(r), home(r), state(r), al, data(r), twin(r), dec(localt(r)))) .
+              s_free_flushlock(pid) .
+              flushover(tid) . % For verification
+              Thread(tid, pid, wl))
+          % Exactly one accessor (Update history 14)
+          <> ((al == [pid]) 
+              -> (s_refreshregion(tid, pid, RGN(id(r), home(r), state(r), al, data(r), twin(r), dec(localt(r)))) .
+                  s_free_flushlock(pid) .
+                  flushover(tid) . % For verification
+                  Thread(tid, pid, wl))
+              <> (s_region_sponmigrate(tid, pid, al . 0, RGN(id(r), home(r), state(r), al, data(r), twin(r), localt(r))) .
+                  s_refreshregion(tid, pid, RGN(id(r), al . 0, UNUSED, [], data(r), twin(r), dec(localt(r)))) .
+                  s_free_flushlock(pid) .
+                  flushover(tid) . % For verification
+                  Thread(tid, pid, wl))
+     )   )   ));
+
+FlushRemoteThread(tid: ThreadId, pid: ProcessId, wl: Set(RegionId), r: Region) =
+  (localt(r) - 1 == 0) 
+  -> (s_flush_msg(tid, pid, home(r), r, true) .
+      s_refreshregion(tid, pid, RGN(id(r), home(r), UNUSED, [], data(r), null, dec(localt(r)))) .
+      s_free_flushlock(pid) .
+      sum pid': ProcessId .
+        r_signal(tid, pid') .
+        % No one uses this region, state=UNUSED
+        flushover(tid) . % For verification
+        Thread(tid, pid, wl))
+  <> (s_flush_msg(tid, pid, home(r), r, false).
+      s_refreshregion(tid, pid, RGN(id(r), home(r), state(r), [], data(r), notnull, dec(localt(r)))) .
+      s_free_flushlock(pid).
+      sum pid': ProcessId .
+        r_signal(tid, pid') .
+        flushover(tid) . % For verification
+        Thread(tid, pid, wl));
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Process Locker
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+proc Locker(pid: ProcessId, 
+            faulters, flushers, homequeue, remotequeue, 
+            wait_faulters, wait_flushers, wait_homequeue, wait_remotequeue: Nat) =
+  % For verification: 
+  (faulters + flushers + homequeue + remotequeue + 
+   wait_faulters + wait_flushers + wait_homequeue + wait_remotequeue == 0) ->
+    lockempty(pid) . Locker() 
+
++ r_require_faultlock(pid) .
+  (faulters + flushers == 0) 
+  -> (s_no_faultwait(pid) .
+      Locker(faulters = faulters + 1))
+  <> Locker(wait_faulters = wait_faulters + 1)
+
++ r_require_flushlock(pid) .
+  (faulters + flushers + homequeue + remotequeue == 0)
+  -> (s_no_flushwait(pid) .
+      Locker(flushers = flushers + 1))
+  <> Locker(wait_flushers = wait_flushers + 1)
+
++ r_require_serverlock(pid) .
+  (homequeue + flushers == 0)
+  -> (s_no_serverwait(pid).
+      Locker(homequeue = homequeue + 1))
+  <> Locker(wait_homequeue = wait_homequeue + 1)
+
++ r_require_homequeuelock(pid) .
+  (homequeue + flushers == 0)
+  -> (s_no_homequeuewait(pid).
+      Locker(homequeue = homequeue + 1))
+  <> Locker(wait_homequeue = wait_homequeue + 1)
+
++ r_require_remotequeuelock(pid) .
+  (remotequeue + flushers == 0)
+  -> (s_no_remotequeuewait(pid) .
+      Locker(remotequeue = remotequeue + 1))
+  <> Locker(wait_remotequeue = wait_remotequeue + 1)
+
++ r_free_faultlock(pid) .
+  (wait_homequeue + wait_remotequeue != 0 && flushers == 0)
+  -> ((wait_homequeue != 0 && homequeue == 0)
+      -> ((s_signal_serverwait(pid) + s_signal_homequeuewait(pid)) .
+          Locker(faulters = dec(faulters), homequeue = homequeue + 1, wait_homequeue = dec(wait_homequeue)))
+      <> ((remotequeue == 0 && wait_remotequeue != 0) 
+          -> (s_signal_remotequeuewait(pid) .
+              Locker(faulters = dec(faulters), remotequeue = remotequeue + 1, wait_remotequeue = dec(wait_remotequeue)))
+          <> Locker(faulters = dec(faulters))))
+  <> ((wait_flushers != 0 && remotequeue + homequeue + flushers == 0 && faulters - 1 == 0)
+      -> (s_signal_flushwait(pid) .
+          Locker(faulters = dec(faulters), flushers = flushers + 1, wait_flushers = dec(wait_flushers)))
+      <> ((wait_faulters != 0 && homequeue + flushers == 0 && faulters - 1 == 0)
+          -> (s_signal_faultwait(pid) .
+              Locker(wait_faulters = dec(wait_faulters)))
+           <> Locker(faulters = dec(faulters))))
+
++ r_free_flushlock(pid) .
+  (wait_homequeue + wait_remotequeue != 0 && flushers - 1 == 0)
+  -> ((wait_homequeue != 0 && homequeue == 0)
+      -> ((s_signal_serverwait(pid) + s_signal_homequeuewait(pid)) .
+          Locker(flushers = dec(flushers), homequeue = homequeue + 1, wait_homequeue = dec(wait_homequeue)))
+      <> ((remotequeue == 0 && wait_remotequeue != 0)
+          -> (s_signal_remotequeuewait(pid) .
+              Locker(flushers = dec(flushers), remotequeue = remotequeue + 1, wait_remotequeue = dec(wait_remotequeue)))
+          <> Locker(flushers = dec(flushers))))
+   <> ((wait_flushers != 0 && remotequeue + homequeue + faulters == 0 && flushers - 1 == 0)
+       -> (s_signal_flushwait(pid) .
+           Locker(wait_flushers = dec(wait_flushers)))
+       <> ((wait_faulters != 0 && homequeue + faulters == 0 && flushers - 1 == 0)
+           -> (s_signal_faultwait(pid) .
+               Locker(faulters = faulters + 1, flushers = dec(flushers), wait_faulters = dec(wait_faulters)))
+           <> Locker(flushers = dec(flushers))))
+  
++ r_free_serverlock(pid) .
+  (wait_homequeue + wait_remotequeue != 0 && flushers == 0)
+  -> ((wait_homequeue != 0 && homequeue - 1 == 0) 
+      -> ((s_signal_serverwait(pid) + s_signal_homequeuewait(pid)) .
+          Locker(wait_homequeue = dec(wait_homequeue)))
+      <> (remotequeue == 0 && wait_remotequeue != 0) 
+          -> (s_signal_remotequeuewait(pid) .
+              Locker(homequeue = dec(homequeue), remotequeue = remotequeue + 1, wait_remotequeue = dec(wait_remotequeue)))
+          <> Locker(homequeue = dec(homequeue)))
+  <> ((wait_flushers != 0 && remotequeue + flushers + faulters == 0 && homequeue - 1 == 0)
+      -> (s_signal_flushwait(pid) .
+          Locker(flushers = flushers + 1, homequeue = dec(homequeue), wait_flushers = dec(wait_flushers)))
+      <> ((wait_faulters != 0 && flushers + faulters == 0 && homequeue - 1 == 0)
+          -> (s_signal_faultwait(pid) .
+              Locker(faulters = faulters + 1, homequeue = dec(homequeue), wait_faulters = dec(wait_faulters)))
+          <> Locker(homequeue = dec(homequeue))))
+  
++ r_free_homequeuelock(pid) .
+  (wait_homequeue + wait_remotequeue != 0 && flushers == 0)
+  -> ((wait_homequeue != 0 && homequeue - 1 == 0)
+      -> (s_signal_serverwait(pid) + s_signal_homequeuewait(pid)) .
+         Locker(wait_homequeue = dec(wait_homequeue))
+      <> ((remotequeue == 0 && wait_remotequeue != 0)
+          -> (s_signal_remotequeuewait(pid) .
+              Locker(homequeue = dec(homequeue), remotequeue = remotequeue + 1, wait_remotequeue = dec(wait_remotequeue)))
+          <> Locker(homequeue = dec(homequeue))))
+  <> ((wait_flushers != 0 && remotequeue + flushers + faulters == 0 && homequeue - 1 == 0)
+      -> (s_signal_flushwait(pid) .
+          Locker(flushers = flushers + 1, homequeue = dec(homequeue), wait_flushers = dec(wait_flushers)))
+      <> ((wait_faulters != 0 && flushers + faulters == 0 && homequeue - 1 == 0) 
+          -> (s_signal_faultwait(pid) .
+              Locker(faulters = faulters + 1, homequeue = dec(homequeue), wait_faulters = dec(wait_faulters)))
+          <> Locker(homequeue = dec(homequeue))))
+
++ r_free_remotequeuelock(pid) .
+  (wait_homequeue + wait_remotequeue != 0 && flushers == 0)
+  -> ((wait_homequeue != 0 && homequeue == 0) 
+      -> ((s_signal_serverwait(pid) + s_signal_homequeuewait(pid)) .
+          Locker(homequeue = homequeue + 1, remotequeue = dec(remotequeue), wait_homequeue = dec(wait_homequeue)))
+      <> ((remotequeue - 1 == 0 && wait_remotequeue != 0)
+          -> (s_signal_remotequeuewait(pid) .
+              Locker(wait_remotequeue = dec(wait_remotequeue)))
+          <> Locker(remotequeue = dec(remotequeue))))
+  <> ((wait_flushers != 0 && homequeue + flushers + faulters == 0 && remotequeue - 1 == 0)
+      -> (s_signal_flushwait(pid) .
+          Locker(flushers = flushers + 1, remotequeue = dec(remotequeue), wait_flushers = dec(wait_flushers)))
+      <> ((wait_faulters != 0 && homequeue + flushers + faulters == 0)
+          -> (s_signal_faultwait(pid) .
+              Locker(faulters = faulters + 1, remotequeue = dec(remotequeue), wait_faulters = dec(wait_faulters)))
+          <> Locker(remotequeue = dec(remotequeue))));
+  
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Process Home Queue at Processor
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+proc HomeQueue(pid: ProcessId) =
+  sum tid: ThreadId, pid': ProcessId .
+    r_i_data_requiremsg(tid, pid', pid) .
+    s_require_homequeuelock(pid) .
+    (r_no_homequeuewait(pid) + r_signal_homequeuewait(pid)) .
+    s_i_data_requiremsg(tid, pid', pid) .
+    HomeQueue()
++ sum tid: ThreadId, pid': ProcessId, r: Region, b: Bool .
+    r_i_flush_msg(tid, pid', pid, r, b) .
+    s_require_homequeuelock(pid) .
+    (r_no_homequeuewait(pid) + r_signal_homequeuewait(pid)) .
+    s_i_flush_msg(tid, pid', pid, r, b) .
+    HomeQueue()
++	homequeueempty(pid) . HomeQueue(); % For verification
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Process Remote Queue at Processor
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+proc RemoteQueue(pid: ProcessId) =
+  sum tid: ThreadId, pid': ProcessId, r: Region, b: Bool .
+    r_o_data_returnmsg(tid, pid, pid', r, b) .
+    s_require_remotequeuelock(pid) .
+    (r_no_remotequeuewait(pid) + r_signal_remotequeuewait(pid)) .
+    s_o_data_returnmsg(tid, pid, pid', r, b) .
+    RemoteQueue()
++ sum tid: ThreadId, pid': ProcessId, r: Region .
+    r_o_region_sponmigrate(tid, pid', pid, r) .
+    s_require_remotequeuelock(pid) .
+    (r_no_remotequeuewait(pid) + r_signal_remotequeuewait(pid)) .
+    s_o_region_sponmigrate(tid, pid', pid, r) .
+    RemoteQueue()
++	remotequeueempty(pid) . RemoteQueue(); % For verification
+
+init 
+  allow({
+    c_require_faultlock,
+    c_require_flushlock,
+    c_require_serverlock,
+    c_require_homequeuelock,
+    c_require_remotequeuelock,
+    c_free_faultlock,
+    c_free_flushlock, 
+    c_free_serverlock,
+    c_free_homequeuelock,
+    c_free_remotequeuelock,
+    c_no_faultwait,
+    c_no_flushwait,
+    c_no_serverwait,
+    c_no_homequeuewait,
+    c_no_remotequeuewait,
+    c_signal_faultwait,
+    c_signal_flushwait,
+    c_signal_serverwait,
+    c_signal_homequeuewait,
+    c_signal_remotequeuewait,
+    c_norefresh,
+    c_i_data_requiremsg,
+    c_o_data_requiremsg,
+    % Update history 9
+    c_i_data_returnmsg,
+    c_o_data_returnmsg,
+    % end of update history 9
+    c_i_flush_msg,
+    c_o_flush_msg,
+    c_i_region_sponmigrate,
+    c_o_region_sponmigrate,
+    c_sendbackinformation,
+    c_refreshregion,
+    c_norefreshregion,
+    c_sendback,
+    c_refresh,
+    c_signal,
+    % What am I doing now?
+    nothingtoflush, 
+    iamaccessing,
+    iamflushing,
+    % For verification
+    biggerthan2,	
+    c_home,
+    c_copy,
+    accessover,
+    flushover,
+    lockempty,
+    homequeueempty,
+    remotequeueempty
+  },
+    comm({
+      s_require_faultlock|r_require_faultlock->c_require_faultlock,
+      s_require_flushlock|r_require_flushlock->c_require_flushlock,
+      s_require_serverlock|r_require_serverlock->c_require_serverlock,
+      s_require_homequeuelock|r_require_homequeuelock->c_require_homequeuelock,
+      s_require_remotequeuelock|r_require_remotequeuelock->c_require_remotequeuelock,
+
+      s_free_faultlock|r_free_faultlock->c_free_faultlock,
+      s_free_flushlock|r_free_flushlock->c_free_flushlock,
+      s_free_serverlock|r_free_serverlock->c_free_serverlock,
+      s_free_homequeuelock|r_free_homequeuelock->c_free_homequeuelock,
+      s_free_remotequeuelock|r_free_remotequeuelock->c_free_remotequeuelock,
+
+      s_no_faultwait|r_no_faultwait->c_no_faultwait,
+      s_no_flushwait|r_no_flushwait->c_no_flushwait,
+      s_no_serverwait|r_no_serverwait->c_no_serverwait,
+      s_no_homequeuewait|r_no_homequeuewait->c_no_homequeuewait,
+      s_no_remotequeuewait|r_no_remotequeuewait->c_no_remotequeuewait,
+
+      s_signal_faultwait|r_signal_faultwait->c_signal_faultwait,
+      s_signal_flushwait|r_signal_flushwait->c_signal_flushwait,
+      s_signal_serverwait|r_signal_serverwait->c_signal_serverwait,
+      s_signal_homequeuewait|r_signal_homequeuewait->c_signal_homequeuewait,
+      s_signal_remotequeuewait|r_signal_remotequeuewait->c_signal_remotequeuewait,
+
+      s_data_requiremsg|r_i_data_requiremsg->c_i_data_requiremsg,
+      s_i_data_requiremsg|r_data_requiremsg->c_o_data_requiremsg,
+
+      s_data_returnmsg|r_o_data_returnmsg->c_i_data_returnmsg,
+      s_o_data_returnmsg|r_data_returnmsg->c_o_data_returnmsg,
+
+      s_flush_msg|r_i_flush_msg->c_i_flush_msg,
+      s_i_flush_msg|r_flush_msg->c_o_flush_msg,
+
+      s_region_sponmigrate|r_o_region_sponmigrate->c_i_region_sponmigrate,
+      s_o_region_sponmigrate|r_region_sponmigrate->c_o_region_sponmigrate,
+
+      s_sendbackinformation|r_sendbackinformation->c_sendbackinformation,
+      s_refreshregion|r_refreshregion->c_refreshregion,
+      s_norefreshregion|r_norefreshregion->c_norefreshregion,
+
+      s_sendback|r_sendback->c_sendback,
+      s_refresh|r_refresh->c_refresh,
+      s_norefresh|r_norefresh->c_norefresh,
+
+      s_signal|r_signal->c_signal,
+
+      % For verification:
+      s_home|r_home->c_home,
+      s_copy|r_copy->c_copy
+    },
+       Thread(T1, P1, {})
+    || Thread(T2, P2, {})
+    || Thread(T3, P3, {})
+    || Locker(P1, 0, 0, 0, 0, 0, 0, 0, 0) 
+    || Locker(P2, 0, 0, 0, 0, 0, 0, 0, 0) 
+    || Locker(P3, 0, 0, 0, 0, 0, 0, 0, 0) 
+    || HomeQueue(P1)
+    || HomeQueue(P2)
+    || HomeQueue(P3)
+    || RemoteQueue(P1)
+    || RemoteQueue(P2)
+    || RemoteQueue(P3)
+    || Processor(P1)
+    || Processor(P2)
+    || Processor(P3)
+    || Region(P1, RGN(R1, P1, UNUSED, [], notnull, null, 0))
+    || Region(P2, RGN(R1, P1, UNUSED, [], null   , null, 0))
+    || Region(P3, RGN(R1, P1, UNUSED, [], notnull, null, 0))
+  ));
+
+

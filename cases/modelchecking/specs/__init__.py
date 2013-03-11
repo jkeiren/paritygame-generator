@@ -24,7 +24,8 @@ class ElevatorSpec(Spec):
 
 class LeaderSpec(Spec):
   def mcrl2(self, nparticipants):
-    return self._template.substitute(nparticipants=nparticipants)
+    return self._template.substitute(nparticipants=nparticipants,
+                                     parts=' || '.join(['Part({0})'.format (i+1) for i in range(0, nparticipants)]))
 
 class DataSpec(Spec):
   def __init__(self, template=None):
@@ -90,9 +91,13 @@ class OthelloSpec(BoardSpec):
 __SPECS = {
     'Debug spec': Spec('debugging'),
     'ABP': DataSpec('abp'),
+    'ABP(BW)': DataSpec('abp_bw'),
+    'CABP': DataSpec('cabp'),
+    'Par': DataSpec('par'),
     'Onebit': DataSpec('onebit'),
     'BRP': DataSpec('brp'),
     'SWP': SWPSpec(),
+    'CCP': Spec('ccp33'),
     'IEEE1394': IEEE1394Spec(),
     'Lift (Incorrect)': LiftSpec('lift-incorrect'),
     'Lift (Correct)': LiftSpec('lift-correct'),

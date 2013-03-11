@@ -9,9 +9,10 @@ import multiprocessing
 import traceback
 
 class Property(PBESCase):
-  def __init__(self, description, lps, mcf, temppath):
+  def __init__(self, description, lps, mcf, temppath, outpath):
     super(Property, self).__init__()
     self.__desc = description
+    self._outpath = outpath
     self._temppath = temppath
     self._prefix = self.__desc + '_' + os.path.splitext(os.path.split(mcf)[1])[0]
     self.lps = lps
@@ -44,7 +45,7 @@ class Case(TempObj):
     self.__name = name
     self.__kwargs = kwargs
     self._mcrl2 = spec.mcrl2(**kwargs)
-    self._outdir = os.path.join(os.path.split(__file__)[0], 'data')
+    self._outpath = os.path.join(os.path.split(__file__)[0], 'data')
     self._temppath = os.path.join(os.path.split(__file__)[0], 'temp')
     self._prefix = '{0}{1}'.format(self.__name, ('_'.join('{0}={1}'.format(k,v) for k,v in self.__kwargs.items())))
     self.proppath = os.path.join(os.path.split(__file__)[0], 'properties', spec.TEMPLATE)
@@ -65,12 +66,17 @@ class Case(TempObj):
   def phase0(self, log):
     '''Generates an LPS and creates subtasks for every property that should be
     verified.'''
-    lps = self._makeLPS(log)    
-    for prop in os.listdir(self.proppath):
-      if not prop.endswith('.mcf'):
-        continue
-      self.subtasks.append(Property(self._prefix, lps, os.path.join(self.proppath, prop), 
-                                    self._temppath))
+    try:
+      lps = self._makeLPS(log)    
+      for prop in os.listdir(self.proppath):
+        if not prop.endswith('.mcf'):
+          continue
+        self.subtasks.append(Property(self._prefix, lps, os.path.join(self.proppath, prop), 
+                                      self._temppath, self._outpath))
+    except tools.ToolException as e:
+      log.error('Exception while creating LPS for {0}, exception was {1}'.format(self, e))
+      raise e
+      
       
   def phase1(self, log):
     for r in self.results:
@@ -111,15 +117,19 @@ class GameCase(Case):
 def getcases(debugOnly = False):
   if(debugOnly):
     return \
-      [Case('Debug spec')]
+      [Case('Debug spec')] + \
+      [Case('ABP', datasize=2)] + \
+      [Case('ABP(BW)', datasize=2)] + \
+      [Case('CABP', datasize=2)] + \
+      [Case('Par', datasize=2)]
   
   return \
     [Case('Debug spec')] + \
-    [GameCase('Othello', width=4, height=4)] + \
-    [GameCase('Clobber', width=4, height=4)] + \
-    [GameCase('Snake', width=4, height=4)] + \
-    [GameCase('Hex', width=4, height=4)] + \
-    [GameCase('Domineering', width=4, height=4)] + \
+    [GameCase('Othello', width=w, height=4) for w in [4, 6]] + \
+    [GameCase('Clobber', width=w, height=h) for w in [3, 4] for h in [3,4]] + \
+    [GameCase('Snake', width=w, height=h) for w in [3,4,5] for h in [3,4,5] ] + \
+    [GameCase('Hex', width=w, height=h) for w in [3,4] for h in [3,4] ] + \
+    [GameCase('Domineering', width=w, height=h) for w in [3,4] for h in [3,4] ] + \
     [IEEECase('IEEE1394', nparties=n, datasize=2, headersize=2, acksize=2) for n in range(2,5)] + \
     [Case('Hanoi', ndisks=n) for n in range(10,18)] + \
     [Case('Elevator', policy=p, storeys=n) for p in ['FIFO', 'LIFO'] for n in range(2,10)] + \
@@ -127,10 +137,13 @@ def getcases(debugOnly = False):
     [Case('Lift (Correct)', nlifts=n) for n in range(2, 5)] + \
     [Case('Lift (Incorrect)', nlifts=n) for n in range(2, 5)] + \
     [Case('ABP', datasize=i) for i in [2,4,8,16,32]] + \
-    [Case('Onebit', datasize=i) for i in range(2,7)] + \
-    [Case('BRP', datasize=i) for i in range(2,7)] + \
-    [Case('SWP', windowsize=1, datasize=i) for i in range(2, 7)] + \
-    [Case('SWP', windowsize=2, datasize=i) for i in range(2, 7)] + \
-    [Case('SWP', windowsize=3, datasize=i) for i in range(2, 5)] + \
-    [Case('SWP', windowsize=4, datasize=2)] + \
+    [Case('ABP(BW)', datasize=i) for i in [2,4,8,16,32]] + \
+    [Case('CABP', datasize=i) for i in [2,4,8,16,32]] + \
+    [Case('Par', datasize=i) for i in [2,4,8,16,32]] + \
+    [Case('Onebit', datasize=i) for i in [2,4,8]] + \
+    [Case('BRP', datasize=i) for i in [2,4,8]] + \
+    [Case('SWP', windowsize=1, datasize=i) for i in [2,4,8,16,32] ] + \
+    [Case('SWP', windowsize=2, datasize=i) for i in [2,4,8,16] ] + \
+    [Case('SWP', windowsize=3, datasize=i) for i in [2,4,8] ] + \
+    [Case('SWP', windowsize=4, datasize=i) for i in [2,4] ] + \
     [Case('Leader', nparticipants=n) for n in range(3, 7)]

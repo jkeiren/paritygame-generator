@@ -12,13 +12,13 @@ from tools import OutOfMemory, Timeout
 
 LARGE_GRAPH=100000
 
-TIMEOUT = 12*60*60 # 12 hours for getting info
+TIMEOUT = 1*60*60 # An hour for getting info
 LPSTOOLS_TIMEOUT = TIMEOUT
-MLSOLVER_TIMEOUT= 60*60
+MLSOLVER_TIMEOUT= TIMEOUT
 PBES2BES_TIMEOUT = TIMEOUT
-PGINFO_TIMEOUT = 120*60
+PGINFO_TIMEOUT = TIMEOUT
 PGSOLVER_TIMEOUT= TIMEOUT
-SOLVE_TIMEOUT = 60*60 # 1 hour for solving
+SOLVE_TIMEOUT = TIMEOUT
 
 MEMLIMIT = 128*1024*1024 # memory limit in kbytes
 LPSTOOLS_MEMLIMIT = 8*1024*1024
@@ -46,19 +46,22 @@ class TempObj(pool.Task):
   def __escape(self, s):
     return s.replace('/', '_').replace(' ', '_')
   
-  def _name(self, ext, extraprefix=""):
-    return self._temppath + '/' + self.__escape(self._prefix) + extraprefix + '.' + ext
+  def _name(self, temppath, ext, extraprefix=""):
+    return temppath + '/' + self.__escape(self._prefix) + extraprefix + '.' + ext
   
   def _existingTempFile(self, ext, extraprefix=""):
-    if os.path.exists(self._name(ext, extraprefix)) and os.path.getsize(self._name(ext, extraprefix)) > 0:
-      return self._name(ext, extraprefix)
+    return self._existingTempFileDir(self._temppath, ext, extraprefix)
+  
+  def _existingTempFileDir(self, temppath, ext, extraprefix=""):
+    if os.path.exists(self._name(temppath, ext, extraprefix)) and os.path.getsize(self._name(temppath, ext, extraprefix)) > 0:
+      return self._name(temppath, ext, extraprefix)
     else:
       return None
     
   def _newTempFileDir(self, temppath, ext, extraprefix=""):
     if not os.path.exists(temppath):
       os.makedirs(temppath)
-    name = self._name(ext, extraprefix)
+    name = self._name(temppath, ext, extraprefix)
     if self._prefix <> "" and not os.path.exists(name):
       fn = open(name, 'w+b')
       return fn
@@ -77,13 +80,13 @@ class TempObj(pool.Task):
     return self._newTempFilenameDir(self._temppath, ext, extraprefix)
 
 class PGInfoTask(TempObj):
-  def __init__(self, pgfile, option, prefix, temppath, outdir):
+  def __init__(self, pgfile, option, prefix, temppath, outpath):
     super(PGInfoTask, self).__init__()
     self.__pgfile = pgfile
     self.__option = option
     self._prefix = prefix
     self._temppath = temppath
-    self._outdir = outdir
+    self._outpath = outpath
     self.result = {}
     self.result['pginfo'] = None
     self.result['yamlfile'] = None
@@ -98,6 +101,7 @@ class PGInfoTask(TempObj):
 
     except (Timeout, OutOfMemory) as e:
       # Handle gracefully, recording the output using the normal ways
+      log.info('Timeout while collecting {0} from {1}'.format(self.__options, self._prefix))
       result = e.result
       
     self.result['pginfo'] = cleanResult(result)
@@ -106,15 +110,16 @@ class PGInfoTask(TempObj):
 
 
 class PGInfoTaskGroup(TempObj):
-  def __init__(self, pgfile, prefix, temppath, outdir):
+  def __init__(self, pgfile, prefix, temppath, outpath):
     super(PGInfoTaskGroup, self).__init__()
     self._prefix = prefix
     self._temppath = temppath
-    self._outdir = outdir
+    self._outpath = outpath
     
     self.__pgfile = pgfile
     
     self.result = {}
+    
     # Map all options to the string with which they are indexed in the
     # resulting YAML output of pginfo.
     self.__optmap = {}
@@ -135,7 +140,7 @@ class PGInfoTaskGroup(TempObj):
   def phase0(self, log):
     log.debug('Collecting information from {0}'.format(self))
     for opt in self.__optmap:
-      self.subtasks.append(PGInfoTask(self.__pgfile, opt, self._prefix, self._temppath, self._outdir))
+      self.subtasks.append(PGInfoTask(self.__pgfile, opt, self._prefix, self._temppath, self._outpath))
     
   def phase1(self, log):
     log.debug('Collecting results from {0}'.format(self))
@@ -161,11 +166,12 @@ class PGInfoTaskGroup(TempObj):
         data[k]['times'] = r.result['pginfo']['times']
         data[k]['memory'] = r.result['pginfo']['memory']
     
-    name = self._newTempFilenameDir(self._outdir, 'yaml')
+    name = self._newTempFilenameDir(self._outpath, 'yaml')
+    log.debug('Writing data from {0} to {1}'.format(self, name))
     yamlfile = open(name, 'w')
     yamlfile.write(yaml.dump(data, default_flow_style = False))
     yamlfile.close()
-    self.result['pginfo']['datafile'] = name
+    self.result['file'] = name
 
 class SolveTask(pool.Task):
   def __init__(self, name, filename, *args):
@@ -208,11 +214,11 @@ class PGCase(TempObj):
   def __init__(self):
     super(PGCase, self).__init__()
     self.result = {}
-    self.result['statistics'] = {}
+    self.result['files'] = {}
     self.result['solutions'] = {}
     self.result['sizes'] = {}
     self.result['times'] = {}
-    self._outdir = os.path.join(os.path.split(__file__)[0], 'data')
+    self._outpath = os.path.join(os.path.split(__file__)[0], 'data')
     self.__solvepg = None
     self.__solvebes = None
     self.__error = False
@@ -226,10 +232,10 @@ class PGCase(TempObj):
         self.result['times'].setdefault(name, {})[task.name] = task.result['times']
         self.result['solutions'].setdefault(name, {})[task.name] = task.result['solution']
       else:
-        self.result['files'].setdefault(name, {})[task.name] = task.result['file']
+        self.result['files'][name] = task.result['file']
   
   def __info(self, pgfile):
-    self.subtasks.append(PGInfoTaskGroup(pgfile, self._prefix, self._temppath, self._outdir))
+    self.subtasks.append(PGInfoTaskGroup(pgfile, self._prefix, self._temppath, self._outpath))
 
   def __reduce(self, pgfile, equiv):
     '''Reduce the PG modulo equiv using pgconvert.'''
@@ -242,7 +248,7 @@ class PGCase(TempObj):
 
   def __solve(self, pgfile):
     '''Solve besfile using pbsespgsolve and pgsolver.'''
-    self.subtasks = [
+    self.subtasks += [
       SolveTask('pbespgsolve', pgfile, '-srecursive')
 #      SolveTask('pbespgsolve (spm)', pgfile),
 #      SolveTask('pbespgsolve (recursive)', pgfile, '-srecursive'),

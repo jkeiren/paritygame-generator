@@ -60,12 +60,9 @@ proc Part(id: Pos) =
         Node(id, FOLLOWER) || Channel(id, id, NONE, NONE, all - {id})
   )));
 
-proc Sys(p: Pos) =
-  (p > 1) -> (Part(p) || Sys(Int2Pos(p - 1))) <> Part(1);
-
 init 
   hide({Send, Recv, Reply},
     allow({Send, Recv, Reply, leader, Trigger, Add, Remove},
       comm({reply|reply'->Reply},
-        Sys(N) 
+        ${parts} 
   )));

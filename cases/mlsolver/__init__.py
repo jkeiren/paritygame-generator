@@ -9,6 +9,7 @@ class MLSolverCase(PGCase):
     self.__name = name
     self.__compact = compact
     self.__kwargs = kwargs
+    self._outpath = os.path.join(os.path.split(__file__)[0], 'data')
     self._temppath = os.path.join(os.path.split(__file__)[0], 'temp')
     self._prefix = '{0}{1}{2}'.format(self.__name, ('_'.join('{0}={1}'.format(k,v) for k,v in self.__kwargs.items())), "_compact" if self.__compact else "")
     self.result['compact'] = str(self.__compact)
