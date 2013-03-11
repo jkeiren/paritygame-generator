@@ -97,6 +97,7 @@ __SPECS = {
     'Onebit': DataSpec('onebit'),
     'BRP': DataSpec('brp'),
     'SWP': SWPSpec(),
+    'Hesselink': DataSpec('hesselink'),
     'CCP': Spec('ccp33'),
     'IEEE1394': IEEE1394Spec(),
     'Lift (Incorrect)': LiftSpec('lift-incorrect'),

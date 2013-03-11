@@ -133,7 +133,7 @@ def getcases(debugOnly = False):
     [IEEECase('IEEE1394', nparties=n, datasize=2, headersize=2, acksize=2) for n in range(2,5)] + \
     [Case('Hanoi', ndisks=n) for n in range(10,18)] + \
     [Case('Elevator', policy=p, storeys=n) for p in ['FIFO', 'LIFO'] for n in range(2,10)] + \
-    [Case('Hesselink', datasize=i) for i in [range(2,7)]] + \
+    [Case('Hesselink', datasize=i) for i in range(2,7) ] + \
     [Case('Lift (Correct)', nlifts=n) for n in range(2, 5)] + \
     [Case('Lift (Incorrect)', nlifts=n) for n in range(2, 5)] + \
     [Case('ABP', datasize=i) for i in [2,4,8,16,32]] + \
