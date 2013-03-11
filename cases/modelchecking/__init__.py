@@ -140,10 +140,10 @@ def getcases(debugOnly = False):
     [Case('ABP(BW)', datasize=i) for i in [2,4,8,16,32]] + \
     [Case('CABP', datasize=i) for i in [2,4,8,16,32]] + \
     [Case('Par', datasize=i) for i in [2,4,8,16,32]] + \
-    [Case('Onebit', datasize=i) for i in [2,4,8]] + \
-    [Case('BRP', datasize=i) for i in [2,4,8]] + \
-    [Case('SWP', windowsize=1, datasize=i) for i in [2,4,8,16,32] ] + \
-    [Case('SWP', windowsize=2, datasize=i) for i in [2,4,8,16] ] + \
-    [Case('SWP', windowsize=3, datasize=i) for i in [2,4,8] ] + \
-    [Case('SWP', windowsize=4, datasize=i) for i in [2,4] ] + \
+    [Case('Onebit', datasize=i) for i in [2,4]] + \
+    [Case('BRP', datasize=i) for i in [2,4]] + \
+    [Case('SWP', windowsize=1, datasize=i) for i in [2,4,8,16] ] + \
+    [Case('SWP', windowsize=2, datasize=i) for i in [2,4,8] ] + \
+    [Case('SWP', windowsize=3, datasize=i) for i in [2,4] ] + \
+    [Case('SWP', windowsize=4, datasize=i) for i in [2] ] + \
     [Case('Leader', nparticipants=n) for n in range(3, 7)]

@@ -138,7 +138,6 @@ class PGInfoTaskGroup(TempObj):
     self.__optmap["neighbourhoods=3"] = "Neighbourhood"
 
   def phase0(self, log):
-    log.debug('Collecting information from {0}'.format(self))
     for opt in self.__optmap:
       self.subtasks.append(PGInfoTask(self.__pgfile, opt, self._prefix, self._temppath, self._outpath))
     
