@@ -20,7 +20,7 @@ PGINFO_TIMEOUT = TIMEOUT
 PGSOLVER_TIMEOUT= TIMEOUT
 SOLVE_TIMEOUT = TIMEOUT
 
-MEMLIMIT = 128*1024*1024 # memory limit in kbytes
+MEMLIMIT = 64*1024*1024 # memory limit in kbytes
 LPSTOOLS_MEMLIMIT = 8*1024*1024
 MLSOLVER_MEMLIMIT = MEMLIMIT
 PBES2BES_MEMLIMIT = MEMLIMIT
@@ -101,7 +101,7 @@ class PGInfoTask(TempObj):
 
     except (Timeout, OutOfMemory) as e:
       # Handle gracefully, recording the output using the normal ways
-      log.info('Timeout while collecting {0} from {1}'.format(self.__options, self._prefix))
+      log.info('Timeout while collecting {0} from {1}'.format(self.__option, self._prefix))
       result = e.result
       
     self.result['pginfo'] = cleanResult(result)
