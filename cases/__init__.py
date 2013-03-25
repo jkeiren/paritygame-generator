@@ -139,7 +139,7 @@ class PGInfoTaskGroup(TempObj):
     self.__optmap["sccs"] = "SCC"
     self.__optmap["ad-cks"] = "Alternation depth [CKS93]"
     self.__optmap["ad"] = "Alternation depth (priority ordering)"
-    self.__optmap["neighbourhoods=3"] = "Neighbourhood (3)"
+    self.__optmap["neighbourhoods=3"] = "Neighbourhood"
 
   def phase0(self, log):
     for opt in self.__optmap:
