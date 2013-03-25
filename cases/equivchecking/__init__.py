@@ -87,7 +87,7 @@ def getcases(debugOnly = False):
       [SameParamCase('Buffer', 'ABP', windowsize=1, capacity=1, datasize=2)]
      
   else:
-    datarange = [2,4,8,16]
+    datarange = [2,4,8]
     return \
       [SameParamCase('Buffer', 'ABP', windowsize=1, capacity=1, datasize=d) for d in datarange] + \
       [SameParamCase('Buffer', 'ABP(BW)', windowsize=1, capacity=1, datasize=d) for d in datarange] + \
@@ -114,7 +114,7 @@ def getcases(debugOnly = False):
       [SameParamCase('Par', 'SWP', windowsize=1, capacity=1, datasize=d) for d in range(4,5)] + \
       [SameParamCase('Onebit', 'Onebit', windowsize=1, capacity=1, datasize=d) for d in range(4,5)] + \
       [SameParamCase('Onebit', 'SWP', windowsize=1, capacity=1, datasize=d) for d in range(4,5)] + \
-      [SameParamCase('SWP', 'SWP', windowsize=1, capacity=1, datasize=d) for d in range(4,5)] + \
+      [SameParamCase('SWP', 'SWP', windowsize=w, capacity=1, datasize=d) for d in range(4,5) for w in range(1,3)] + \
       [SameParamCase('Hesselink (Specification)', 'Hesselink (Implementation)', datasize=d) for d in range(2,5) ] + \
       [SameParamCase('Hesselink (Implementation)', 'Hesselink (Specification)', datasize=d) for d in range(2,5) ]
       

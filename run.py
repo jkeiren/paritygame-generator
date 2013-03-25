@@ -18,7 +18,7 @@ def run(poolsize, resultsfile, debugOnly=False):
         if results:
           log.info('Skipping the following cases because results for them were found:')
           for case in results:
-            casesdone.append(case)
+            casesdone.append(case['case'])
         else:
           casesdone = []
       except (AttributeError, TypeError):
@@ -39,7 +39,7 @@ def run(poolsize, resultsfile, debugOnly=False):
     for case in pool.run(*tasks):
       if isinstance(case, (modelchecking.Case, equivchecking.Case, pgsolver.Case, mlsolver.Case)):
         log.info('Got result for {0}'.format(case))
-        resultsfile.write(yaml.dump(case.result, default_flow_style = False))
+        resultsfile.write(yaml.dump([case.result], default_flow_style = False))
         resultsfile.flush()
 
     log.info('Done.')

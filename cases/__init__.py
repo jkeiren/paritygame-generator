@@ -17,14 +17,16 @@ LPSTOOLS_TIMEOUT = TIMEOUT
 MLSOLVER_TIMEOUT= TIMEOUT
 PBES2BES_TIMEOUT = TIMEOUT
 PGINFO_TIMEOUT = TIMEOUT
+PGCONVERT_TIMEOUT = TIMEOUT
 PGSOLVER_TIMEOUT= TIMEOUT
 SOLVE_TIMEOUT = TIMEOUT
 
-MEMLIMIT = 64*1024*1024 # memory limit in kbytes
-LPSTOOLS_MEMLIMIT = 8*1024*1024
+MEMLIMIT = 32*1024*1024 # memory limit in kbytes
+LPSTOOLS_MEMLIMIT = MEMLIMIT
 MLSOLVER_MEMLIMIT = MEMLIMIT
 PBES2BES_MEMLIMIT = MEMLIMIT
 PGINFO_MEMLIMIT = MEMLIMIT
+PGCONVERT_MEMLIMIT = MEMLIMIT
 PGSOLVER_MEMLIMIT = MEMLIMIT
 SOLVE_MEMLIMIT = MEMLIMIT
 
@@ -239,7 +241,7 @@ class PGCase(TempObj):
   def __reduce(self, pgfile, equiv):
     '''Reduce the PG modulo equiv using pgconvert.'''
     reduced = self._newTempFilename('gm')
-    result = tools.pgconvert('-ve{0}'.format(equiv), pgfile, reduced, timed=True)
+    result = tools.pgconvert('-ve{0}'.format(equiv), pgfile, reduced, timed=True, timeout=PGCONVERT_TIMEOUT, memlimit=PGCONVERT_MEMLIMIT)
     self.result['sizes']['orig'] = {'vertices': result['filter']['vorig'], 'edges': result['filter']['eorig']}
     self.result['sizes'][equiv] = {'vertices': result['filter']['vred'], 'edges': result['filter']['ered']}
     self.result['times'].setdefault(equiv, {})['reduction'] = result['times']#['reduction']
