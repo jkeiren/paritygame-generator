@@ -40,7 +40,4 @@ def getcases(debugOnly = False):
   return \
     [Case('elevatorverification', n) for n in range(3, 8)] + \
     [Case('elevatorverification', '-u', n) for n in range(3, 8)] + \
-    [Case('elevatorverification_alt', n) for n in range(3, 8)] + \
-    [Case('elevatorverification_alt', '-u', n) for n in range(3, 8)] + \
-    [Case('towersofhanoi', n) for n in range(5, 12)] + \
-    [Case('towersofhanoi_alt', n) for n in range(5, 12)]
+    [Case('towersofhanoi', n) for n in range(5, 12)]
