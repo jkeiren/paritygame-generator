@@ -1,4 +1,8 @@
 % The protocol does not generate new messages
 % Obtained from: "Tools for parameterized Boolean Equation Systems",
 % S. Janssen, MSc. thesis
+%
+% Intuitively this expresses that, from the initial state of the protocol,
+% any message d cannot be delivered until after a d has been read
+% through ra.
 forall d: D. nu X. (([!ra(d)]X && [sb(d)]false))

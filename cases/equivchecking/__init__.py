@@ -87,34 +87,34 @@ def getcases(debugOnly = False):
       [SameParamCase('Buffer', 'ABP', windowsize=1, capacity=1, datasize=2)]
      
   else:
-    datarange = [2,4,8]
+    datarange = [2,4]
     return \
       [SameParamCase('Buffer', 'ABP', windowsize=1, capacity=1, datasize=d) for d in datarange] + \
       [SameParamCase('Buffer', 'ABP(BW)', windowsize=1, capacity=1, datasize=d) for d in datarange] + \
       [SameParamCase('Buffer', 'CABP', windowsize=1, capacity=1, datasize=d) for d in datarange] + \
       [SameParamCase('Buffer', 'Par', windowsize=1, capacity=1, datasize=d) for d in datarange] + \
-      [SameParamCase('Buffer', 'Onebit', windowsize=1, capacity=c, datasize=d) for d in datarange for c in range(1,3)] + \
-      [SameParamCase('Buffer', 'SWP', windowsize=1, capacity=c, datasize=d) for d in datarange for c in range(1,3)] + \
+      [SameParamCase('Buffer', 'Onebit', windowsize=1, capacity=c, datasize=d) for d in [2,3] for c in [1,2]] + \
+      [SameParamCase('Buffer', 'SWP', windowsize=1, capacity=c, datasize=d) for d in datarange for c in [1,2]] + \
       [SameParamCase('ABP', 'ABP', windowsize=1, capacity=1, datasize=d) for d in datarange] + \
       [SameParamCase('ABP', 'ABP(BW)', windowsize=1, capacity=1, datasize=d) for d in datarange] + \
       [SameParamCase('ABP', 'CABP', windowsize=1, capacity=1, datasize=d) for d in datarange] + \
       [SameParamCase('ABP', 'Par', windowsize=1, capacity=1, datasize=d) for d in datarange] + \
-      [SameParamCase('ABP', 'Onebit', windowsize=1, capacity=1, datasize=d) for d in datarange] + \
+      [SameParamCase('ABP', 'Onebit', windowsize=1, capacity=1, datasize=d) for d in [2,3]] + \
       [SameParamCase('ABP', 'SWP', windowsize=1, capacity=1, datasize=d) for d in datarange] + \
       [SameParamCase('ABP(BW)', 'ABP(BW)', windowsize=1, capacity=1, datasize=d) for d in datarange] + \
       [SameParamCase('ABP(BW)', 'CABP', windowsize=1, capacity=1, datasize=d) for d in datarange] + \
       [SameParamCase('ABP(BW)', 'Par', windowsize=1, capacity=1, datasize=d) for d in datarange] + \
-      [SameParamCase('ABP(BW)', 'Onebit', windowsize=1, capacity=1, datasize=d) for d in datarange] + \
+      [SameParamCase('ABP(BW)', 'Onebit', windowsize=1, capacity=1, datasize=d) for d in [2,3]] + \
       [SameParamCase('ABP(BW)', 'SWP', windowsize=1, capacity=1, datasize=d) for d in datarange] + \
       [SameParamCase('CABP', 'Par', windowsize=1, capacity=1, datasize=d) for d in datarange] + \
-      [SameParamCase('CABP', 'Onebit', windowsize=1, capacity=1, datasize=d) for d in datarange] + \
+      [SameParamCase('CABP', 'Onebit', windowsize=1, capacity=1, datasize=d) for d in [2,3]] + \
       [SameParamCase('CABP', 'SWP', windowsize=1, capacity=1, datasize=d) for d in datarange] + \
-      [SameParamCase('Par', 'Par', windowsize=1, capacity=1, datasize=d) for d in range(4,5)] + \
-      [SameParamCase('Par', 'Onebit', windowsize=1, capacity=1, datasize=d) for d in range(4,5)] + \
-      [SameParamCase('Par', 'SWP', windowsize=1, capacity=1, datasize=d) for d in range(4,5)] + \
-      [SameParamCase('Onebit', 'Onebit', windowsize=1, capacity=1, datasize=d) for d in range(4,5)] + \
-      [SameParamCase('Onebit', 'SWP', windowsize=1, capacity=1, datasize=d) for d in range(4,5)] + \
-      [SameParamCase('SWP', 'SWP', windowsize=w, capacity=1, datasize=d) for d in range(4,5) for w in range(1,3)] + \
-      [SameParamCase('Hesselink (Specification)', 'Hesselink (Implementation)', datasize=d) for d in range(2,5) ] + \
-      [SameParamCase('Hesselink (Implementation)', 'Hesselink (Specification)', datasize=d) for d in range(2,5) ]
+      [SameParamCase('Par', 'Par', windowsize=1, capacity=1, datasize=d) for d in datarange] + \
+      [SameParamCase('Par', 'Onebit', windowsize=1, capacity=1, datasize=d) for d in datarange] + \
+      [SameParamCase('Par', 'SWP', windowsize=1, capacity=1, datasize=d) for d in datarange] + \
+      [SameParamCase('Onebit', 'Onebit', windowsize=1, capacity=1, datasize=d) for d in [2,3]] + \
+      [SameParamCase('Onebit', 'SWP', windowsize=1, capacity=1, datasize=d) for d in [2,3] ] + \
+      [SameParamCase('SWP', 'SWP', windowsize=w, capacity=1, datasize=d) for d in [2,3] for w in [1,2] ] + \
+      [SameParamCase('Hesselink (Specification)', 'Hesselink (Implementation)', datasize=d) for d in range(2,4) ] + \
+      [SameParamCase('Hesselink (Implementation)', 'Hesselink (Specification)', datasize=d) for d in range(2,4) ]
       

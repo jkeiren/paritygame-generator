@@ -127,23 +127,24 @@ def getcases(debugOnly = False):
     [Case('Debug spec')] + \
     [Case('Lift (Correct)', nlifts=n) for n in range(2, 5)] + \
     [Case('Lift (Incorrect)', nlifts=n) for n in range(2, 5)] + \
-    [Case('ABP', datasize=i) for i in [2,4,8,16,32]] + \
-    [Case('ABP(BW)', datasize=i) for i in [2,4,8,16,32]] + \
-    [Case('CABP', datasize=i) for i in [2,4,8,16,32]] + \
-    [Case('Par', datasize=i) for i in [2,4,8,16,32]] + \
-    [IEEECase('IEEE1394', nparties=n, datasize=2, headersize=2, acksize=2) for n in range(2,5)] + \
-    [Case('SWP', windowsize=1, datasize=i) for i in [2,4,8,16] ] + \
-    [Case('SWP', windowsize=2, datasize=i) for i in [2,4,8] ] + \
+    [Case('ABP', datasize=i) for i in [2,4,8]] + \
+    [Case('ABP(BW)', datasize=i) for i in [2,4,8]] + \
+    [Case('CABP', datasize=i) for i in [2,4,8]] + \
+    [Case('Par', datasize=i) for i in [2,4,8]] + \
+    [IEEECase('IEEE1394', nparties=2, datasize=2, headersize=2, acksize=2)] + \
+    [Case('SWP', windowsize=1, datasize=i) for i in [2,4,8] ] + \
+    [Case('SWP', windowsize=2, datasize=i) for i in [2,4] ] + \
     [Case('Leader', nparticipants=n) for n in range(3, 7)] + \
     [GameCase('Othello', width=4, height=4)] + \
-    [GameCase('Clobber', width=w, height=h) for (w,h) in [(3,3),(3,4),(4,4)] ] + \
-    [GameCase('Snake', width=w, height=h) for (w,h) in [(3,3), (4,4), (5,5), (3,4), (3,5), (4,5)] ] + \
-    [GameCase('Hex', width=w, height=h) for (w,h) in [(3,3), (3,4), (4,4)] ] + \
-    [GameCase('Domineering', width=w, height=h) for (w,h) in [(3,3),(3,4),(4,4) ] ] + \
-    [Case('Hanoi', ndisks=n) for n in range(10,18)] + \
-    [Case('Elevator', policy=p, storeys=n) for p in ['FIFO', 'LIFO'] for n in range(2,10)] + \
-    [Case('Hesselink', datasize=i) for i in range(2,7) ] + \
-    [Case('Onebit', datasize=i) for i in [2,4]] + \
+    [GameCase('Clobber', width=w, height=h) for (w,h) in [(4,4)] ] + \
+    [GameCase('Snake', width=w, height=h) for (w,h) in [(4,4)] ] + \
+    [GameCase('Hex', width=w, height=h) for (w,h) in [(4,4)] ] + \
+    [GameCase('Domineering', width=w, height=h) for (w,h) in [(4,4) ] ] + \
+    [Case('Hanoi', ndisks=n) for n in range(8,14)] + \
+    [Case('Elevator', policy=p, storeys=n) for p in ['FIFO', 'LIFO'] for n in range(2,9)] + \
+    [Case('CCP')] + \
+    [Case('Hesselink', datasize=i) for i in range(2,5) ] + \
+    [Case('Onebit', datasize=i) for i in [2,3]] + \
     [Case('BRP', datasize=i) for i in [2,4]] + \
     [Case('SWP', windowsize=3, datasize=i) for i in [2,4] ] + \
     [Case('SWP', windowsize=4, datasize=i) for i in [2] ]

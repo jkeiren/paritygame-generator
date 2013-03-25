@@ -1,7 +1,7 @@
 % There is a path along which a message (after reading through
-% action r1) can be lost infinitely often (through i, not followed by c3).
+% action r1) can be lost infinitely often (through i, followed by c3(e)).
 %
 % This property is true for the alternating bit protocol, because there is
 % no fairness assumption.
 
-<true*>(exists d:D .<r1(d)>(nu X. mu Y. (<i>(<!(exists b:Bool . c3(d,b))>X || <!i && !s4(d)>Y))))
+<true*>(exists d:D .<r1(d)>(nu X. mu Y. (<c3(e)>X || <!c3(e) && !s4(d)>Y)))

@@ -1,0 +1,4 @@
+% This property is complementary to messages_can_be_lost_infinitely_often.
+% It expresses that, invariantly, if a message d is read through ra,
+% then it is delivered through sb within a finite number of steps.
+(nu X. [true]X && forall d:D.[ra(d)]mu Y.([!sb(d)]Y && <true>true))

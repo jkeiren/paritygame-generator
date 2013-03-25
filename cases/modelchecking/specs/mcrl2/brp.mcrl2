@@ -16,6 +16,7 @@ map  inv: Bit -> Bit;
      last: List(D) -> Bool;
      C_ind: List(D) -> Ind;
      I_ind: Bit # Bit -> Ind;
+     MAX : Nat;
 
 var  l: List(D);
      b0,b1: Bit;
@@ -27,6 +28,7 @@ eqn  inv(e0)       = e1;
      I_ind(b0, e1) = I_ok;
      I_ind(e0, e0) = I_inc;
      I_ind(e1, e0) = I_fst;
+     MAX           = 8;
 
 act  r1: List(D);
      s1,s4: Ind;
@@ -40,7 +42,7 @@ proc K = sum b0:Bit, b1:Bit, b2:Bit, d:D.
 
      L = r5.(a.s6 + a.s9(lost)).L;
 
-     S(b2:Bit,max:Nat) = sum l:List(D). (#l < 4) -> r1(l).S1(l,e1,b2,0,max)<>delta;
+     S(b2:Bit,max:Nat) = sum l:List(D). (0 < # l && #l < 4) -> r1(l).S1(l,e1,b2,0,max)<>delta;
 
      S1(l:List(D), b0:Bit, b2:Bit, rn:Nat, max:Nat) =
        s7(set).s2(b0,indl(l),b2,head(l)).S2(l,b0,b2,rn,max);
@@ -77,8 +79,9 @@ proc K = sum b0:Bit, b1:Bit, b2:Bit, d:D.
            r8(reset) ) +
        r10(ready).s10(signal) + r8(reset) ).T2;
 
-init allow({c2,c3,c5,c6,c7,c8,c9,c10,a,r1,s1,s4},
+init
+     allow({c2,c3,c5,c6,c7,c8,c9,c10,a,r1,s1,s4},
      comm({r2|s2->c2, r3|s3->c3, r5|s5->c5, r6|s6->c6, r7|s7->c7, s8|r8->c8,
            r9|s9->c9, r10|s10->c10 },
-     T1 || S(e0,3) || K || L || R || T2
+     T1 || S(e0,MAX) || K || L || R || T2
      ));

@@ -81,7 +81,7 @@ proc Domineering(b:Board,Player1Moves:Bool)=
        delta;
 
 map initialBoard: Nat # Nat -> Board;
-    initialRow: Nat -> Board;
+    initialRow: Nat -> Row;
 var n,m: Nat;
 eqn initialBoard(n, 0) = [];
     (m > 0) -> initialBoard(n, m) = initialRow(n) |> initialBoard(n, Int2Nat(m-1));

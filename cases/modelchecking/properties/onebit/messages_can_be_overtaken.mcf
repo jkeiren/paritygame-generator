@@ -1,0 +1,7 @@
+% This property expresses that messages can be overtaken.
+% i.e. if a message d is read into the buffer, and as long is it has
+% not been sent, then if a message d' other than d is read into the buffer
+% as well, it can be the case that d' is sent before d.
+%
+% This indicates that messages are delivered out of order.
+<true*>exists d:D.<ra(d)><(!sb(d))*>exists d':D. (val(d != d') && <ra(d')><!sb(d)*.sb(d')>true)

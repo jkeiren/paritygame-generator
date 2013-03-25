@@ -1,0 +1,21 @@
+% The protocol does not duplicate messages
+% Messages are counted. Whenever there is one message in the buffer
+% then as long as no other message is added to the buffer, then
+% the message in the buffer cannot be removed from the buffer twice.
+%
+% This is generalisation of no_duplication_of_messages.2
+
+nu X.
+[!exists d:D. ra(d)]X
+&&
+forall dd:D.
+   [ra(dd)]nu Y(m1:D = dd). 
+       ( [!(exists d:D. ra(d)|| sb(d))]Y(m1) && 
+         forall ee:D.[sb(ee)](val(m1 == ee) && X) && 
+         forall ff:D. [ra(ff)]nu Z(m2:D = ff). 
+                         ([!(exists d:D. ra(d)||sb(d))]Z(m2) &&
+                          forall gg:D. [sb(gg)]((val(gg == m1) && Y(m2)))
+                         )
+       )
+
+

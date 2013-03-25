@@ -89,27 +89,27 @@ class OthelloSpec(BoardSpec):
 
 
 __SPECS = {
-    'Debug spec': Spec('debugging'),
     'ABP': DataSpec('abp'),
     'ABP(BW)': DataSpec('abp_bw'),
-    'CABP': DataSpec('cabp'),
-    'Par': DataSpec('par'),
-    'Onebit': DataSpec('onebit'),
     'BRP': DataSpec('brp'),
-    'SWP': SWPSpec(),
-    'Hesselink': DataSpec('hesselink'),
+    'CABP': DataSpec('cabp'),
     'CCP': Spec('ccp33'),
-    'IEEE1394': IEEE1394Spec(),
-    'Lift (Incorrect)': LiftSpec('lift-incorrect'),
-    'Lift (Correct)': LiftSpec('lift-correct'),
-    'Hanoi': HanoiSpec('hanoi'),
-    'Leader': LeaderSpec('leader'),
-    'Elevator': ElevatorSpec('elevator'),
-    'Snake': BoardSpec('snake'),
     'Clobber': BoardSpec('clobber'),
-    'Hex': BoardSpec('hex'),
+    'Debug spec': Spec('debugging'),
     'Domineering': BoardSpec('domineering'),
-    'Othello': OthelloSpec('othello')
+    'Elevator': ElevatorSpec('elevator'),
+    'Hanoi': HanoiSpec('hanoi'),
+    'Hesselink': DataSpec('hesselink'),
+    'Hex': BoardSpec('hex'),
+    'IEEE1394': IEEE1394Spec(),
+    'Leader': LeaderSpec('leader'),
+    'Lift (Correct)': LiftSpec('lift-correct'),
+    'Lift (Incorrect)': LiftSpec('lift-incorrect'),
+    'Onebit': DataSpec('onebit'),
+    'Othello': OthelloSpec('othello'),
+    'Par': DataSpec('par'),
+    'Snake': BoardSpec('snake'),
+    'SWP': SWPSpec()    
   }
 
 def get(name):

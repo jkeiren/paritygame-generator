@@ -1,4 +1,0 @@
-% [PW08]
-% From any reachable state, there exists a path with infinitely many
-% tau-steps, and possbilby some other steps.
-nu X . ([true] X && nu Z . mu Y . (<true>Y || <tau>Z))

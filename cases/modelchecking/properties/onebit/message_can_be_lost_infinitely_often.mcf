@@ -1,0 +1,6 @@
+% This property expresses that there exists a path along
+% which a message can be lost infinitely often,
+% i.e. there is a path along which message d is read through
+% an ra action, and it is never delivered through the
+% sb action.
+(mu X. <true>X || exists d:D.<ra(d)>nu Y.(<!sb(d)>Y || [true]false))

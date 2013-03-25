@@ -5,8 +5,6 @@
 % Computer Science 18, Cambridge University Press, 1990.
 %
 % We modified the description to use Bool instead of Bit, with b0=false, b1=true.
-% All internal actions have been hidden. Renamed r1->r, s4->s to allow comparison
-% with other protocols that implement a one place buffer.
 
 % Common data
 sort D = struct ${data};

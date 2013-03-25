@@ -11,6 +11,7 @@ import yaml
 from tools import OutOfMemory, Timeout
 
 LARGE_GRAPH=100000
+COMPUTE_WIDTH_MEASURES = False
 
 TIMEOUT = 1*60*60 # An hour for getting info
 LPSTOOLS_TIMEOUT = TIMEOUT
@@ -131,13 +132,14 @@ class PGInfoTaskGroup(TempObj):
     self.__optmap["diameter"] = "Diameter"
     self.__optmap["girth"] = "Girth"
     self.__optmap["diamonds"] = "Diamonds"
-    self.__optmap["treewidth-lb"] = "Treewidth (Lower bound)"
-    self.__optmap["treewidth-ub"] = "Treewidth (Upper bound)"
-    self.__optmap["kellywidth-ub"] = "Kelly-width (Upper bound)"
+    if COMPUTE_WIDTH_MEASURES:
+      self.__optmap["treewidth-lb"] = "Treewidth (Lower bound)"
+      self.__optmap["treewidth-ub"] = "Treewidth (Upper bound)"
+      self.__optmap["kellywidth-ub"] = "Kelly-width (Upper bound)"
     self.__optmap["sccs"] = "SCC"
     self.__optmap["ad-cks"] = "Alternation depth [CKS93]"
     self.__optmap["ad"] = "Alternation depth (priority ordering)"
-    self.__optmap["neighbourhoods=3"] = "Neighbourhood"
+    self.__optmap["neighbourhoods=3"] = "Neighbourhood (3)"
 
   def phase0(self, log):
     for opt in self.__optmap:
@@ -193,23 +195,29 @@ class SolveTask(pool.Task):
   
   def run_pbespgsolve(self, log):
     try:      
-      result = tools.pbespgsolve(self.__pgfile, *self.__opts, timed=True, timeout=SOLVE_TIMEOUT)
+      result = tools.pbespgsolve(self.__pgfile, *self.__opts, timed=True, timeout=SOLVE_TIMEOUT, memlimit=SOLVE_MEMLIMIT)
       self.result['times'] = result['times']
       self.result['solution'] = result['out'].strip()
     except tools.Timeout:
       log.info('Timeout')
       self.result['times'] = 'timeout'
+    except tools.OutOfMemory:
+      log.info('Out of memory')
+      self.result['memory'] = 'outofmemory'
   
   def run_pgsolver(self, log):
     try:
       opts = self.__opts + ['-v', '2', self.__pgfile]
-      result = tools.pgsolver(*opts, timeout=SOLVE_TIMEOUT)
+      result = tools.pgsolver(*opts, timeout=SOLVE_TIMEOUT, memlimit=SOLVE_MEMLIMIT)
       self.result['times'] = re.search('Overall\s*\|.*?\s+([0-9.]+) sec', result['out'], re.DOTALL).group(1)
       self.result['solution'] = re.search('Player (0|1) wins from nodes:[^}]*?[{,]0[,}]', result['out'], re.DOTALL).group(1)
       self.result['solution'] = 'true' if self.result['solution'] == '0' else 'false'
     except tools.Timeout:
       log.info('Timeout')
-      self.result['times'] = 'timeout'  
+      self.result['times'] = 'timeout'
+    except tools.OutOfMemory:
+      log.info('Out of memory')
+      self.result['memory'] = 'outofmemory'
 
 class PGCase(TempObj):
   def __init__(self):
@@ -343,7 +351,7 @@ class PBESCase(PGCase):
     pbes.close()
     pgfile = self._newTempFilename('gm')
     try:
-      result = tools.pbes2bes('-s0', '-v', '-rjittyc', '-opgsolver', pbes.name, pgfile, memlimit=PBES2BES_MEMLIMIT, timeout=PBES2BES_TIMEOUT, timed=True)
+      result = tools.pbes2bes('-s0', '-rjittyc', '-opgsolver', pbes.name, pgfile, memlimit=PBES2BES_MEMLIMIT, timeout=PBES2BES_TIMEOUT, timed=True)
       os.unlink(pbes.name)
     except (OutOfMemory, Timeout) as e:
       result = e.result

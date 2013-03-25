@@ -2,21 +2,20 @@
 % Originally described in "Solving Parity Games in Practice" by Oliver
 % Friedmann and Martin Lange.
 %
-% In accordance to the original model, after a button is pressed, first
+% In accordance with the original model, after a button is pressed, first
 % something else needs to happen.
 
 % Scheduling policy
 sort Policy = struct FIFO | LIFO;
 map policy: Policy;
-%eqn policy = FIFO;
-eqn policy = LIFO;
+eqn policy = ${policy};
 
 sort Floor = Pos;
      Requests = List(Floor);
 
 % The number of floors in the building
 map storeys: Floor;
-eqn storeys = 4;
+eqn storeys = ${storeys};
 
 % Add request in the appropriate place, according to the queueing behaviour
 % FIFO use queueing

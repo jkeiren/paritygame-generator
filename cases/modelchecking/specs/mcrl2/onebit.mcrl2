@@ -50,13 +50,13 @@ init hide ({c4,c2,ccl,c,i_del},
            rename({sb->sd},
              allow({c,ccl,ra,sb,s2,r4,i_del,i_lost},
                comm({rcl|scl->ccl,r|s->c},
-                 S(true,true,true,d0,d0,e0,e0)||
+                 S(true,true,true,d1,d1,e0,e0)||
                  Tim||
-                 C(frame(d0,e0,e0),read))))||
+                 C(frame(d1,e0,e0),read))))||
            rename({ra->rc,s2->s4,r4->r2},
              allow({c,ccl,ra,sb,s2,r4,i_del,i_lost},
                comm({rcl|scl->ccl,r|s->c},
-                 S(true,true,true,d0,d0,e0,e0)||
+                 S(true,true,true,d1,d1,e0,e0)||
                  Tim||
-                 C(frame(d0,e0,e0) ,read)))))));
+                 C(frame(d1,e0,e0) ,read)))))));
 
