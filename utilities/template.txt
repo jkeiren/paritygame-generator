@@ -1,0 +1,34 @@
+\documentclass{minimal}
+\usepackage[active,tightpage]{preview}
+\usepackage{pgfplots}
+\begin{document}
+\begin{preview}
+  \begin{tikzpicture}[mark size=2.5pt,remember picture,scale=0.77]
+    \begin{loglogaxis}[axis x line=bottom,
+                       axis y line=left,
+                       xmin=%Xmin,xmax=%Xmax,
+                       ymin=%Ymin,ymax=%Ymax,
+                       xlabel={%Xlabel},
+                       ylabel={%Ylabel},
+                       scatter/classes={
+                         modelchecking={mark=x},
+                         equivalence={mark=o},
+                         mlsolver={mark=+}
+                       },
+                       legend image post style={xshift=0.5cm},
+                       legend pos=south east,
+                       legend cell align=left,
+                       legend style={
+                         nodes={right}
+                       }]
+      \addplot+[black,only marks,mark=x,scatter,scatter src=explicit symbolic] 
+      table[col sep=comma,x=x, y=y, meta=cluster] { 
+        x, y, cluster
+        %values 
+      };
+      \addplot+[dotted] plot coordinates {(0.0001, 0.0001) (50000000, 50000000)};
+      \legend{~modelchecking, ~equivalence, ~mlsolver}
+    \end{loglogaxis}
+  \end{tikzpicture}
+\end{preview}
+\end{document}

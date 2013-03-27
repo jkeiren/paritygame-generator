@@ -1,0 +1,19 @@
+\documentclass{minimal}
+\usepackage[active,tightpage]{preview}
+\usepackage{pgfplots}
+\begin{document}
+\begin{preview}
+  \begin{tikzpicture}[mark size=2.5pt,remember picture,scale=0.77]
+    \begin{axis}[ybar interval,xmax=100,xtick=,
+                 xlabel={\% Reduction},
+                 x tick label as interval = false,
+                 xticklabel={\pgfmathprintnumber[fixed]\tick},%$[\pgfmathprintnumber[fixed]\tick,\cdot)$},
+                 ylabel={Cases}]
+      \addplot+[hist={bins=20}] table[col sep=comma, y=reduction] {
+        reduction
+        %values
+      };
+    \end{axis}
+  \end{tikzpicture}
+\end{preview}
+\end{document}
