@@ -14,6 +14,7 @@ clusters = {
   'mlsolver': []
 }
 
+# Determine to which cluster this case belongs
 def getCluster(case):
   for (cluster,names) in clusters.iteritems():
     for name in names:
@@ -21,9 +22,11 @@ def getCluster(case):
         return cluster
   assert False
 
+# Number of vertices + number of edges
 def sizesum(sizes, equiv):
   return int(sizes[equiv]['vertices']) + int(sizes[equiv]['edges'])
 
+# Determine the time required for reduction + solving for equiv.
 def mintime(times, equiv):
   if equiv == 'orig':
     equiv = 'original'
@@ -36,17 +39,20 @@ def mintime(times, equiv):
   result = max(0.01, min(offset + min(filteredtimes + [1800.0]), 1800.0))
   return result
 
+# Compute the data that should be plotted.
+# key determines the field that is used (sizes or times)
+# aggregationFunction is a function that gives the result for one equivalence
+# data is the data set
+# equiv1 and equiv2 are the equivalences we are comparing.
 def getplotdata(key, aggregationFunction, data, equiv1, equiv2):
   LOG.debug("Getting plot data with key {0}, and equivalences {1} and {2}".format(key, equiv1, equiv2))
   if isinstance(data, list): # top level
-    LOG.debug("A")
     for d in data:
       for p in getplotdata(key, aggregationFunction, d, equiv1, equiv2):
         yield p
   else: # deeper nesting.
     assert isinstance(data, dict)
     if data.has_key('case') and (data.has_key('properties') or data.has_key('instances')):
-      LOG.debug("B")
       # High level case, we have some varieties
       if data.has_key('properties'): # Model checking
         instances = data.get('properties')
@@ -67,7 +73,7 @@ def getplotdata(key, aggregationFunction, data, equiv1, equiv2):
 # Define how to compute the plot points     
 generators = {
   'sizes': lambda *args: getplotdata('sizes', sizesum, *args),
-  'times': lambda *args: getplotdata('times', mintime, *args)  
+  'times': lambda *args: getplotdata('times', mintime, *args)
 }
 
 def scatterplot(case, results):
