@@ -1,3 +1,67 @@
+# Original vs bisimulation
+- xval: orig
+  yval: bisim
+  type: sizes
+  format: hist
+  jobname: sizes_ob
+- Xmin: 0.01
+  Xmax: 3600
+  Ymin: 0.01
+  Ymax: 3600
+  Xlabel: Original
+  Ylabel: Strong bisimulation
+  xval: orig
+  yval: bisim
+  type: times
+  jobname: times_ob
+- xval: orig
+  yval: bisim
+  type: sizes
+  format: boxplot
+  jobname: reduction_ob
+# Original vs governed bisimulation
+- xval: orig
+  yval: fmib
+  type: sizes
+  format: hist
+  jobname: sizes_of
+- Xmin: 0.01
+  Xmax: 3600
+  Ymin: 0.01
+  Ymax: 3600
+  Xlabel: Original
+  Ylabel: Governed bisimulation
+  xval: orig
+  yval: fmib
+  type: times
+  jobname: times_of
+- xval: orig
+  yval: fmib
+  type: sizes
+  format: boxplot
+  jobname: reduction_of
+ # Original vs stuttering
+- xval: orig
+  yval: stut
+  type: sizes
+  format: hist
+  jobname: sizes_os
+- Xmin: 0.01
+  Xmax: 3600
+  Ymin: 0.01
+  Ymax: 3600
+  Xlabel: Original
+  Ylabel: Stuttering
+  xval: orig
+  yval: stut
+  type: times
+  jobname: times_os
+- xval: orig
+  yval: stut
+  type: sizes
+  format: boxplot
+  jobname: reduction_os
+# Original vs governed stuttering
 - xval: orig
   yval: gstut
   type: sizes
@@ -18,6 +82,7 @@
   type: sizes
   format: boxplot
   jobname: reduction_og
+ # Stuttering vs governed stuttering
 - xval: stut
   yval: gstut
   type: sizes

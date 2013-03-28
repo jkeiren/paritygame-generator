@@ -1,7 +1,7 @@
 import copy
 import logging
 import optparse
-import string
+import os
 import subprocess
 import yaml
 
@@ -56,16 +56,66 @@ def mintime(times, equiv):
   result = max(0.01, min(offset + min(filteredtimes + [3600.0]), 3600.0))
   return result
 
+def detailFile(data, case):
+  f = data['files'][case]
+  f = f[f.find('cases'):]
+  return os.path.join(RESULT_DIR,f)
+
+def detailData(data, case):
+  return yaml.load(open(detailFile(data, case), 'r'))
+
+def getsize(data, case):
+  if case == 'original':
+    case = 'orig'
+  return data['sizes'][case]['vertices'] + data['sizes'][case]['edges']
+
+def getalternationDepth(data, case):
+  return detailData(data,case)['Alternation depth (priority ordering)']['value']
+
+def getAvgDegree(data, case):
+  return detailData(data,case)['Graph']['Degree']['avg']
+
+def getMaxOutDegree(data, case):
+  return detailData(data,case)['Graph']['Out-degree']['max']
+
+def getMaxInDegree(data, case):
+  return detailData(data,case)['Graph']['In-degree']['max']
+
+def getNumSCCs(data, case):
+  return detailData(data,case)['SCC']['SCCs']
+
+def getNontrivialSCCs(data, case):
+  SCCs = detailData(data,case)['SCC']
+  return SCCs['SCCs'] - SCCs['Trivial SCCs']
+
+def getDiamonds(data, case):
+  return detailData(data,case)['Diamonds']['Total']
+
+def getDiameter(data, case):
+  return detailData(data,case)['Diameter']['value']
+
+getter = {
+  'size': getsize,
+  'alternation_depth': getalternationDepth,
+  'avg_degree': getAvgDegree,
+  'max_indegree': getMaxInDegree,
+  'max_outdegree': getMaxOutDegree,
+  'sccs': getNumSCCs,
+  'nontrivial_sccs': getNontrivialSCCs,
+  'diamonds': getDiamonds,
+  'diameter': getDiameter
+}
+
 # Compute the data that should be plotted.
 # key determines the field that is used (sizes or times)
 # aggregationFunction is a function that gives the result for one equivalence
 # data is the data set
 # equiv1 and equiv2 are the equivalences we are comparing.
-def getplotdata(key, aggregationFunction, data, equiv1, equiv2):
-  LOG.debug("Getting plot data with key {0}, and equivalences {1} and {2}".format(key, equiv1, equiv2))
+def getplotdata(data, xcase, ycase, xval, yval):
+  LOG.debug("Getting plot data for ({0}, {1}) with X={2} and Y={3}".format(xcase, ycase, xval, yval))
   if isinstance(data, list): # top level
     for d in data:
-      for p in getplotdata(key, aggregationFunction, d, equiv1, equiv2):
+      for p in getplotdata(d, xcase, ycase, xval, yval):
         yield p
   else: # deeper nesting.
 #    print data
@@ -79,104 +129,43 @@ def getplotdata(key, aggregationFunction, data, equiv1, equiv2):
         instances = data.get('instances')
 
       for instance in instances:
-        for point in getplotdata(key, aggregationFunction, instance, equiv1, equiv2):
+        for point in getplotdata(instance, xcase, ycase, xval, yval):
           yield (point[0], point[1], getCluster(data['case']))
       
     else: # We are in pretty deep!
       if data.has_key('case'):
-        yield (aggregationFunction(data[key],equiv1), aggregationFunction(data[key],equiv2), getCluster(data['case']))
+        try:
+          yield (getter[xval](data, xcase), getter[yval](data, ycase), getCluster(data['case']))
+        except:
+          pass
       else:
-        yield (aggregationFunction(data[key],equiv1), aggregationFunction(data[key],equiv2))
+        try:
+          yield (getter[xval](data, xcase), getter[yval](data, ycase))
+        except:
+          pass
 
-# Compute the data that should be plotted.
-# key determines the field that is used (sizes or times)
-# aggregationFunction is a function that gives the result for one equivalence
-# data is the data set
-# equiv1 and equiv2 are the equivalences we are comparing.
-def getgenerationdata(data, dummy, equiv):
-  LOG.debug("Getting generation data with equivalence {0}".format(equiv))
-  if isinstance(data, list): # top level
-    for d in data:
-      for p in getgenerationdata(d, dummy, equiv):
-        yield p
-  else: # deeper nesting.
-    #print data
-    assert isinstance(data, dict)
-    if data.has_key('case') and (data.has_key('properties') or data.has_key('instances')):
-      # High level case, we have some varieties
-      if data.has_key('properties'): # Model checking
-        instances = data.get('properties')
-      else:
-        assert data.has_key('instances') # Equivalence checking or MLSolver
-        instances = data.get('instances')
 
-      for instance in instances:
-        for point in getgenerationdata(instance, dummy, equiv):
-          yield (point[0], point[1], getCluster(data['case']))
-      
-    else: # We are in pretty deep!
-      if data.has_key('case'):
-        yield (gentime(data['generation']), mintime(data['times'],equiv), getCluster(data['case']))
-      else:
-        yield (gentime(data['generation']), mintime(data['times'],equiv))
-
-# Define how to compute the plot points     
-generators = {
-  'sizes': lambda *args: getplotdata('sizes', sizesum, *args),
-  'times': lambda *args: getplotdata('times', mintime, *args),
-  'generation': lambda *args: getgenerationdata(*args)
-}
-
-def scatterplot(case, results):
+def scatterplot(plotcase, results):
   LOG.debug("Results: {0}".format(results))
-  LOG.debug("case: {0}".format(case))
+  LOG.debug("case: {0}".format(plotcase))
   values = '\n        '.join(
     ['{0}, {1}, {2}'.format(x, y, cluster) 
-     for x, y, cluster in generators[case['type']](results, case['xval'], case['yval'])])
+     for x, y, cluster in getplotdata(results, plotcase['xcase'], plotcase['ycase'], plotcase['xval'], plotcase['yval'])])
   LOG.debug(values)
-  latexsrc = open('template.txt').read()
-  for lbl in ('Xlabel', 'Ylabel', 'Xmin', 'Xmax', 'Ymin', 'Ymax'):
-    latexsrc = latexsrc.replace('%' + lbl, str(case[lbl]))
-  return latexsrc.replace('%values', values)
-  pass
-
-def histogram(case, results):
-  values = '\n        '.join(
-    [r'{0:.2f}'.format(100.0 - 100.0 * float(y) / float(x))
-     for x, y, _ in generators[case['type']](results, case['xval'], case['yval'])])
-  for x, y, _ in generators[case['type']](results, case['xval'], case['yval']):
-    if y > x:
-      print '!!!', y, x
-  latexsrc = open('templatehist.txt').read()
+  latexsrc = open('templatesize.txt').read()
+  for lbl in ('xmode', 'ymode', 'Xlabel', 'Ylabel'):
+    latexsrc = latexsrc.replace('%' + lbl, str(plotcase[lbl]))
   return latexsrc.replace('%values', values)
 
-def boxplot(case, results):
-  values = [(x, y, cluster) for x, y, cluster in generators[case['type']](results, case['xval'], case['yval'])]
-  data = []
-  for cluster in clusters.keys():
-    clustervalues = filter(lambda x: x[2] == cluster, values)
-    if clustervalues == []: continue
-    reductions = map(lambda x: 100.0 - 100.0 * float(x[1]) / float(x[0]), clustervalues)
-    min_ = min(reductions + [100])
-    avg = sum(reductions) / len(reductions)
-    max_ = max(reductions + [0])
-    data.append((cluster, min_, avg, max_))
-    
-  coords = ['{:20}, {:5}, {:6.2f}, {:6.2f}, {:6.2f}'.format(case, n, avg, min_, max_ - min_) for n, (case, min_, avg, max_) in enumerate(data)]
-  latexsrc = string.Template(open('templatepercase.txt').read())
-  return latexsrc.substitute(cases = ','.join([x[0] for x in data]), table = '\n    '.join(coords))
-  
 def run(plotspec, resultfile):
   cases = yaml.load(open(plotspec).read())
   results = yaml.load(open(resultfile).read())
 
   for plot in cases:
-    if plot.setdefault('format', 'scatter') == 'scatter':
-      latexsrc = scatterplot(plot, copy.deepcopy(results))
-    elif plot['format'] in ['histogram', 'hist']:
-      latexsrc = histogram(plot, copy.deepcopy(results))
-    else: # plot['format'] == 'boxplot'
-      latexsrc = boxplot(plot, copy.deepcopy(results))
+    latexsrc = scatterplot(plot, copy.deepcopy(results))
+    f = open("/tmp/{0}.tex".format(plot['jobname']), 'w')
+    f.write(latexsrc)
+    f.close()
     pdflatex = subprocess.Popen(['pdflatex', '-jobname=' + plot['jobname']], stdin=subprocess.PIPE)
     pdflatex.communicate(latexsrc)
 
@@ -199,6 +188,8 @@ def runCmdLine():
   if options.verbosity > 1:
     LOG.setLevel(logging.DEBUG)
   
+  global RESULT_DIR
+  RESULT_DIR=os.path.dirname(os.path.abspath(resultfile))
   run(plotspec, resultfile)
 
 if __name__ == '__main__':

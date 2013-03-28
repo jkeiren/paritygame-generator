@@ -1,0 +1,33 @@
+\documentclass{minimal}
+\usepackage[active,tightpage]{preview}
+\usepackage{pgfplots}
+\begin{document}
+\begin{preview}
+  \begin{tikzpicture}[mark size=2.5pt,remember picture,scale=0.77]
+    \begin{axis}[axis x line=bottom,
+                       axis y line=left,
+                       xlabel={%Xlabel},
+                       ylabel={%Ylabel},
+                       xmode={%xmode},
+                       ymode={%ymode},
+                       scatter/classes={
+                         modelchecking={mark=x},
+                         equivalence={mark=o},
+                         mlsolver={mark=+}
+                       },
+                       legend image post style={xshift=0.5cm},
+                       legend pos=south east,
+                       legend cell align=left,
+                       legend style={
+                         nodes={right}
+                       }]
+      \addplot+[black,only marks,mark=x,scatter,scatter src=explicit symbolic] 
+      table[col sep=comma,x=x, y=y, meta=cluster] { 
+        x, y, cluster
+        %values 
+      };
+      \legend{~modelchecking, ~equivalence, ~mlsolver}
+    \end{axis}
+  \end{tikzpicture}
+\end{preview}
+\end{document}
