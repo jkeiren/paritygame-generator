@@ -1,5 +1,6 @@
 import logging
 import optparse
+import os
 import sqlite3
 import yaml
 
@@ -11,7 +12,7 @@ SCHEMA_QUERY = '''
 );
 CREATE TABLE "instances" (
     "id" INTEGER PRIMARY KEY,
-    "case" INTEGER NOT NULL,
+    "caseid" INTEGER NOT NULL,
     "name" TEXT NOT NULL
 );
 CREATE TABLE "games" (
@@ -21,32 +22,154 @@ CREATE TABLE "games" (
 );
 CREATE TABLE "gamesizes" (
     "id" INTEGER PRIMARY KEY,
-    "vertices" INTEGER NOT NULL,
-    "edges" INTEGER NOT NULL
+    "vertices" INTEGER DEFAULT NULL,
+    "edges" INTEGER DEFAULT NULL,
+    "priorities" INTEGER DEFAULT NULL,
+    "even_vertices" INTEGER DEFAULT NULL,
+    "odd_vertices" INTEGER DEFAULT NULL,
+    "alternation_depth" INTEGER DEFAULT NULL,
+    "alternation_depth_cks93" INTEGER DEFAULT NULL,
+    "bfs_height" INTEGER DEFAULT NULL,
+    "bfs_max_queue" INTEGER DEFAULT NULL,
+    "bfs_back_level_edges" INTEGER DEFAULT NULL,
+    "dfs_maxstack" INTEGER DEFAULT NULL,
+    "diameter" INTEGER DEFAULT NULL,
+    "diamonds" INTEGER DEFAULT NULL,
+    "even_diamonds" INTEGER DEFAULT NULL,
+    "odd_diamonds" INTEGER DEFAULT NULL,
+    "girth" INTEGER DEFAULT NULL,
+    "avg_degree" INTEGER DEFAULT NULL,
+    "max_degree" INTEGER DEFAULT NULL,
+    "min_degree" INTEGER DEFAULT NULL,
+    "avg_indegree" INTEGER DEFAULT NULL,
+    "max_indegree" INTEGER DEFAULT NULL,
+    "min_indegree" INTEGER DEFAULT NULL,
+    "avg_outdegree" INTEGER DEFAULT NULL,
+    "max_outdegree" INTEGER DEFAULT NULL,
+    "min_outdegree" INTEGER DEFAULT NULL,
+    "avg_1_neighbourhood" INTEGER DEFAULT NULL,
+    "min_1_neighbourhood" INTEGER DEFAULT NULL,
+    "max_1_neighbourhood" INTEGER DEFAULT NULL,
+    "avg_2_neighbourhood" INTEGER DEFAULT NULL,
+    "min_2_neighbourhood" INTEGER DEFAULT NULL,
+    "max_2_neighbourhood" INTEGER DEFAULT NULL,
+    "avg_3_neighbourhood" INTEGER DEFAULT NULL,
+    "min_3_neighbourhood" INTEGER DEFAULT NULL,
+    "max_3_neighbourhood" INTEGER DEFAULT NULL,
+    "sccs" INTEGER DEFAULT NULL,
+    "scc_quotient_height" INTEGER DEFAULT NULL,
+    "terminal_sccs" INTEGER DEFAULT NULL,
+    "trivial_sccs" INTEGER DEFAULT NULL   
 );
 CREATE TABLE "generation" (
     "id" INTEGER PRIMARY KEY,
-    "time" REAL NOT NULL,
-    "tool" TEXT NOT NULL
+    "time" REAL,
+    "tool" TEXT
 );
 CREATE TABLE "solving" (
     "id" INTEGER PRIMARY KEY,
-    "time" REAL NOT NULL,
-    "tool" TEXT NOT NULL,
-    "solution" TEXT NOT NULL
+    "time" REAL,
+    "tool" TEXT,
+    "solution" TEXT
 );
 CREATE TABLE "reduction" (
     "id" INTEGER PRIMARY KEY,
     "idfrom" INTEGER NOT NULL,
     "idto" INTEGER NOT NULL,
-    "tool" TEXT NOT NULL,
-    "time" REAL NOT NULL
-);'''
+    "tool" TEXT,
+    "time" REAL
+);
+'''
 
-def loaddata(conn, data, caseid=None):
+def loaddetaildata(conn, gameid, detailfile, datadir):
+  detailfile = os.path.join(datadir, detailfile[detailfile.find('cases/'):])
+  data = yaml.load(open(detailfile, 'r'))
+  
+  c = conn.cursor()
+  query = '''
+  UPDATE gamesizes
+  SET even_vertices=?,
+      odd_vertices=?,
+      priorities=?,
+      alternation_depth=?,
+      alternation_depth_cks93=?,
+      bfs_height=?,
+      bfs_max_queue=?,
+      bfs_back_level_edges=?,
+      dfs_maxstack=?,
+      diameter=?,
+      diamonds=?,
+      even_diamonds=?,
+      odd_diamonds=?,
+      girth=?,
+      avg_degree=?,
+      max_degree=?,
+      min_degree=?,
+      avg_indegree=?,
+      max_indegree=?,
+      min_indegree=?,
+      avg_outdegree=?,
+      max_outdegree=?,
+      min_outdegree=?,
+      avg_1_neighbourhood=?,
+      max_1_neighbourhood=?,
+      min_1_neighbourhood=?,
+      avg_2_neighbourhood=?,
+      max_2_neighbourhood=?,
+      min_2_neighbourhood=?,
+      avg_3_neighbourhood=?,
+      max_3_neighbourhood=?,
+      min_3_neighbourhood=?,
+      sccs=?,
+      scc_quotient_height=?,
+      terminal_sccs=?,
+      trivial_sccs=?
+    WHERE id=?'''
+
+  c.execute(query,
+            (data.get('Graph',{}).get('Number of even vertices', None),
+            data.get('Graph',{}).get('Number of odd vertices', None),
+            data.get('Graph',{}).get('Number of priorities', None),
+            data.get('Alternation depth (priority ordering)', {}).get('value', None),
+            data.get('Alternation depth [CKS93]', {}).get('value', None),
+            data.get('BFS', {}).get('Number of levels (BFS height)', None),
+            data.get('BFS', {}).get('Max queue', None),
+            data.get('BFS', {}).get('Number of back level edges', None),
+            data.get('DFS', {}).get('Max stack', None),
+            data.get('Diameter', {}).get('value', None),
+            data.get('Diamonds', {}).get('Total', None),
+            data.get('Diamonds', {}).get('Even', None),
+            data.get('Diamonds', {}).get('Odd', None),
+            data.get('Girth', {}).get('value', None),
+            data.get('Graph', {}).get('Degree', {}).get('avg', None),
+            data.get('Graph', {}).get('Degree', {}).get('max', None),
+            data.get('Graph', {}).get('Degree', {}).get('min', None),
+            data.get('Graph', {}).get('In-degree', {}).get('avg', None),
+            data.get('Graph', {}).get('In-degree', {}).get('max', None),
+            data.get('Graph', {}).get('In-degree', {}).get('min', None),
+            data.get('Graph', {}).get('Out-degree', {}).get('avg', None),
+            data.get('Graph', {}).get('Out-degree', {}).get('max', None),
+            data.get('Graph', {}).get('Out-degree', {}).get('min', None),
+            data.get('Neighbourhood', {}).get(1, {}).get('avg', None),
+            data.get('Neighbourhood', {}).get(1, {}).get('max', None),
+            data.get('Neighbourhood', {}).get(1, {}).get('min', None),
+            data.get('Neighbourhood', {}).get(2, {}).get('avg', None),
+            data.get('Neighbourhood', {}).get(2, {}).get('max', None),
+            data.get('Neighbourhood', {}).get(2, {}).get('min', None),
+            data.get('Neighbourhood', {}).get(3, {}).get('avg', None),
+            data.get('Neighbourhood', {}).get(3, {}).get('max', None),
+            data.get('Neighbourhood', {}).get(3, {}).get('min', None),
+            data.get('SCC', {}).get('SCCs', None),
+            data.get('SCC', {}).get('Quotient height', None),
+            data.get('SCC', {}).get('Terminal SCCs', None),
+            data.get('SCC', {}).get('Trivial SCCs', None),
+            gameid)) 
+  
+
+def loaddata(conn, data, datadir, caseid=None):
   if isinstance(data, list):
     for d in data:
-      loaddata(conn, d)
+      loaddata(conn, d, datadir)
   else:
     assert isinstance(data, dict)
     if caseid is None and data.has_key('case'):
@@ -68,12 +191,12 @@ def loaddata(conn, data, caseid=None):
       LOG.info("Added case with id {0}".format(caseid))
       
       if not data.has_key('properties') and not data.has_key('instances'):
-        loaddata(conn, data, caseid)
+        loaddata(conn, data, datadir, caseid)
         
       for property in data.get('properties', []):
-        loaddata(conn, property, caseid)
+        loaddata(conn, property, datadir, caseid)
       for instance in data.get('instances', []):
-        loaddata(conn, instance, caseid)
+        loaddata(conn, instance, datadir, caseid)
           
     else:
       # Instance level
@@ -86,8 +209,6 @@ def loaddata(conn, data, caseid=None):
         name = 'default'
       
       c = conn.cursor()
-      print caseid
-      print data
       c.execute('INSERT INTO instances VALUES (null, ?, ?)', (caseid, name))
       instanceid = c.execute('SELECT last_insert_rowid()').fetchone()[0]
       LOG.info("Added instance {0}".format(instanceid))
@@ -101,29 +222,41 @@ def loaddata(conn, data, caseid=None):
       sizes = data['sizes']
       times = data['times']
       solutions = data['solutions']
-      c.execute('INSERT INTO generation VALUES (?, ?, ?)', (games['orig'], data['generation']['times']['total'], data['generation']['tool']))
+      files = data['files']
+      c.execute('INSERT INTO generation VALUES (?, ?, ?)', (games['orig'], data['generation'].get('times', {}).get('total', None), data['generation'].get('tool', None)))
       for reduction in equivalences:
-        c.execute('INSERT INTO gamesizes VALUES (?, ?, ?)', (games[reduction], int(sizes[reduction]['vertices']), int(sizes[reduction]['edges'])))
-        if reduction != 'orig':
-          c.execute('INSERT INTO reduction VALUES (null, ?, ?, ?, ?)', (games['orig'], games[reduction], 'pgconvert', times[reduction]['reduction']['reduction']))
         if reduction == 'orig':
           red = 'original'
         else:
           red = reduction
-        c.execute('INSERT INTO solving VALUES (?, ?, ?, ?)', (games[reduction], times[red]['pbespgsolve']['solving'], 'pbespgsolve', solutions[red]['pbespgsolve']))
+          
+        c.execute('INSERT INTO gamesizes (id, vertices, edges) VALUES (?, ?, ?)', (games[reduction], sizes[reduction].get('vertices', None), sizes[reduction].get('edges', None)))
+        if reduction != 'orig':
+          c.execute('INSERT INTO reduction VALUES (null, ?, ?, ?, ?)', (games['orig'], games[reduction], 'pgconvert', times[reduction].get('reduction', {}).get('reduction', None)))
+          
+        solvingtime = times[red].get('pbespgsolve', {})
+        if solvingtime == 'timeout':
+          solvingtime = None
+        else:
+          solvingtime = solvingtime.get('solving', None)
+        solution = solutions.get(red, {}).get('pbespgsolve', None)
+        if solution == 'unknown':
+          solution = None       
+        c.execute('INSERT INTO solving VALUES (?, ?, ?, ?)', (games[reduction], solvingtime, 'pbespgsolve', solution))
+        conn.commit()
         
+        loaddetaildata(conn, games[reduction], files[red], datadir)
+        conn.commit()
         
-        
-        
-
 def run(resultfile, sqlitefile):
   conn = sqlite3.connect(sqlitefile)
   conn.executescript(SCHEMA_QUERY)
   conn.commit()
-    
+  
+  datadir = os.path.dirname(os.path.abspath(resultfile))
   data = yaml.load(open(resultfile, 'r'))
   
-  loaddata(conn, data)
+  loaddata(conn, data, datadir)
   
   conn.commit()  
   conn.close()
