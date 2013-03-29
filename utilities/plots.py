@@ -1,7 +1,7 @@
-import copy
 import logging
 import optparse
 import os
+import string
 import subprocess
 import sqlite3
 import yaml
@@ -151,20 +151,52 @@ def scatterplot(plotcase, conn):
     ['{0}, {1}, {2}'.format(x, y, cluster) 
      for x, y, cluster in getplotdata(conn, plotcase['xcase'], plotcase['ycase'], plotcase['xval'], plotcase['yval'])])
   LOG.debug(values)
-  latexsrc = open('templatesize.txt').read()
+  latexsrc = open('templatescatter.txt').read()
   for lbl in ('xmode', 'ymode', 'Xlabel', 'Ylabel'):
     latexsrc = latexsrc.replace('%' + lbl, str(plotcase[lbl]))
   return latexsrc.replace('%values', values)
+
+def histogram(plotcase, conn):
+  values = '\n        '.join(
+    [r'{0:.2f}'.format(100.0 - 100.0 * float(y) / float(x))
+     for x, y, _ in getplotdata(conn, plotcase['xcase'], plotcase['ycase'], plotcase['xval'], plotcase['yval'])])
+  latexsrc = open('templatehist.txt').read()
+  return latexsrc.replace('%values', values)
+
+def boxplot(plotcase, conn):
+  values = [(x, y, cluster) for x, y, cluster in getplotdata(conn, plotcase['xcase'], plotcase['ycase'], plotcase['xval'], plotcase['yval'])]
+  data = []
+  for cluster in clusters.keys():
+    clustervalues = filter(lambda x: x[2] == cluster, values)
+    if clustervalues == []: continue
+    reductions = map(lambda x: 100.0 - 100.0 * float(x[1]) / float(x[0]), clustervalues)
+    min_ = min(reductions + [100])
+    avg = sum(reductions) / len(reductions)
+    max_ = max(reductions + [0])
+    data.append((cluster, min_, avg, max_))
+    
+  coords = ['{:20}, {:5}, {:6.2f}, {:6.2f}, {:6.2f}'.format(case, n, avg, min_, max_ - min_) for n, (case, min_, avg, max_) in enumerate(data)]
+  latexsrc = string.Template(open('templatebox.txt').read())
+  return latexsrc.substitute(cases = ','.join([x[0] for x in data]), table = '\n    '.join(coords))
 
 def run(plotspec, dbfile):
   cases = yaml.load(open(plotspec).read())
   conn = sqlite3.connect(dbfile)
   
   for plot in cases:
-    latexsrc = scatterplot(plot, conn)
-    f = open("/tmp/{0}.tex".format(plot['jobname']), 'w')
-    f.write(latexsrc)
-    f.close()
+    if not plot.has_key('format'):
+      LOG.warning("No plot format specified")
+      continue
+    
+    if plot['format'] == 'scatterplot':
+      latexsrc = scatterplot(plot, conn)
+    elif plot['format'] == 'boxplot':
+      latexsrc = boxplot(plot, conn)
+    elif plot['format'] == 'histogram':
+      latexsrc = histogram(plot, conn)
+    else:
+      LOG.warning("Unknown plot format {0}".format(plot['format']))
+      continue
     pdflatex = subprocess.Popen(['pdflatex', '-jobname=' + plot['jobname']], stdin=subprocess.PIPE)
     pdflatex.communicate(latexsrc)
     os.unlink('{0}.aux'.format(plot['jobname']))
