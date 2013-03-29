@@ -108,8 +108,13 @@ class PGInfoTask(TempObj):
       result = e.result
       
     self.result['pginfo'] = cleanResult(result)
-    self.result['output'] = yaml.load(open(yamlfile).read())
-    os.unlink(yamlfile)
+    try:
+      self.result['output'] = yaml.load(open(yamlfile).read())
+      os.unlink(yamlfile)
+    except (IOError, OSError) as e:
+      log.error('Cannot open YAML file with output for {0}, exception was {1}'.format(self.__option, e))
+      
+    
 
 
 class PGInfoTaskGroup(TempObj):
