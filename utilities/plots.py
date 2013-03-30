@@ -57,58 +57,11 @@ def mintime(times, equiv):
   result = max(0.01, min(offset + min(filteredtimes + [3600.0]), 3600.0))
   return result
 
-_XYSIZE_QUERY = '''
-SELECT (X.vertices + X.edges) as xval,
-       (Y.vertices + Y.edges) as yval,
-       cases.name 
-FROM gamesizes X, gamesizes Y, games gx, games gy, instances, cases
-WHERE X.id = gx.id 
-  AND Y.id = gy.id
-  AND gx.instance = gy.instance
-  AND gx.reduction = "{0}"
-  AND gy.reduction = "{1}"
-  AND gy.instance = instances.id
-  AND gx.instance = instances.id
-  AND instances.caseid = cases.id
-'''
-
-_XSIZE_QUERY = '''
-SELECT (X.vertices + X.edges) as xval,
-       Y.{0} as yval,
-       cases.name
-FROM gamesizes X, gamesizes Y, games gx, games gy, instances, cases
-WHERE X.id = gx.id 
-  AND Y.id = gy.id
-  AND gx.instance = gy.instance
-  AND gx.reduction = "{1}"
-  AND gy.reduction = "{2}"
-  AND gy.instance = instances.id
-  AND gx.instance = instances.id
-  AND instances.caseid = cases.id
-  AND yval IS NOT NULL
-'''
-
-_YSIZE_QUERY = '''
-SELECT X.{0} as xval,
-       (Y.vertices + Y.edges) as yval,
-       cases.name
-FROM gamesizes X, gamesizes Y, games gx, games gy, instances, cases
-WHERE X.id = gx.id 
-  AND Y.id = gy.id
-  AND gx.instance = gy.instance
-  AND gx.reduction = "{1}"
-  AND gy.reduction = "{2}"
-  AND gy.instance = instances.id
-  AND gx.instance = instances.id
-  AND instances.caseid = cases.id
-  AND xval IS NOT NULL
-'''
-
 _QUERY = '''
 SELECT X.{0} as xval,
        Y.{1} as yval,
        cases.name 
-FROM gamesizes X, gamesizes Y, games gx, games gy, instances, cases
+FROM query_gamesizes X, query_gamesizes Y, games gx, games gy, instances, cases
 WHERE X.id = gx.id 
   AND Y.id = gy.id
   AND gx.instance = gy.instance
@@ -123,48 +76,59 @@ WHERE X.id = gx.id
 
 def query(conn, xcase, ycase, xval, yval):
   c = conn.cursor()
-  if xval == 'size' and yval == 'size':
-    return c.execute(_XYSIZE_QUERY.format(xcase, ycase))
-  elif xval == 'size':
-    return c.execute(_XSIZE_QUERY.format(yval, xcase, ycase))
-  elif yval == 'size':
-    return c.execute(_YSIZE_QUERY.format(xval, xcase, ycase))
-  else:
-    return c.execute(_QUERY.format(xval, yval, xcase, ycase))
+  return c.execute(_QUERY.format(xval, yval, xcase, ycase))
   
 # Compute the data that should be plotted.
 # key determines the field that is used (sizes or times)
 # aggregationFunction is a function that gives the result for one equivalence
 # data is the data set
 # equiv1 and equiv2 are the equivalences we are comparing.
-def getplotdata(conn, xcase, ycase, xval, yval):
+def getplotdata(conn, xcase, ycase, xval, yval, xmode = None, ymode = None):
   LOG.debug("Getting plot data for ({0}, {1}) with X={2} and Y={3}".format(xcase, ycase, xval, yval))
   
   data = query(conn, xcase, ycase, xval, yval)
   
   for row in data:
-    yield(row[0],row[1],getCluster(row[2]))
+    x,y = row[0], row[1]
+    if xval == 'times' and x is None:
+      x = 4000
+    if yval == 'times' and y is None:
+      y = 4000
+    
+    if xval != 'times' and xmode == 'log' and float(x) == float(0):
+      x = 1
+    if yval != 'times' and ymode == 'log' and float(y) == float(0):
+      y = 1
+    yield (x,y,getCluster(row[2]))
   
   
 def scatterplot(plotcase, conn):
   values = '\n        '.join(
     ['{0}, {1}, {2}'.format(x, y, cluster) 
-     for x, y, cluster in getplotdata(conn, plotcase['xcase'], plotcase['ycase'], plotcase['xval'], plotcase['yval'])])
+     for x, y, cluster in getplotdata(conn, plotcase['xcase'], plotcase['ycase'], plotcase['xval'], plotcase['yval'], plotcase['xmode'], plotcase['ymode'])])
   LOG.debug(values)
   latexsrc = open('templatescatter.txt').read()
   for lbl in ('xmode', 'ymode', 'Xlabel', 'Ylabel'):
     latexsrc = latexsrc.replace('%' + lbl, str(plotcase[lbl]))
+  maxes = ''
+  if plotcase.has_key('xmax'):
+    maxes = maxes + ",xmax={0}".format(plotcase['xmax'])
+  if plotcase.has_key('ymax'):
+    maxes += ",ymax={0}".format(plotcase['ymax'])
+  latexsrc = latexsrc.replace('%maxes', maxes)
   return latexsrc.replace('%values', values)
 
 def histogram(plotcase, conn):
   values = '\n        '.join(
     [r'{0:.2f}'.format(100.0 - 100.0 * float(y) / float(x))
-     for x, y, _ in getplotdata(conn, plotcase['xcase'], plotcase['ycase'], plotcase['xval'], plotcase['yval'])])
+     for x, y, cluster in getplotdata(conn, plotcase['xcase'], plotcase['ycase'], plotcase['xval'], plotcase['yval'])])
   latexsrc = open('templatehist.txt').read()
   return latexsrc.replace('%values', values)
 
 def boxplot(plotcase, conn):
+  LOG.debug("Creating boxplot for case {0}".format(plotcase))
   values = [(x, y, cluster) for x, y, cluster in getplotdata(conn, plotcase['xcase'], plotcase['ycase'], plotcase['xval'], plotcase['yval'])]
+  LOG.debug("Obtained {0} values".format(len(values)))
   data = []
   for cluster in clusters.keys():
     clustervalues = filter(lambda x: x[2] == cluster, values)
@@ -174,10 +138,15 @@ def boxplot(plotcase, conn):
     avg = sum(reductions) / len(reductions)
     max_ = max(reductions + [0])
     data.append((cluster, min_, avg, max_))
-    
+  
+  print data  
   coords = ['{:20}, {:5}, {:6.2f}, {:6.2f}, {:6.2f}'.format(case, n, avg, min_, max_ - min_) for n, (case, min_, avg, max_) in enumerate(data)]
   latexsrc = string.Template(open('templatebox.txt').read())
-  return latexsrc.substitute(cases = ','.join([x[0] for x in data]), table = '\n    '.join(coords))
+  if plotcase.get('yticklabels', True):
+    cases = ','.join([x[0] for x in data])
+  else:
+    cases = ""
+  return latexsrc.substitute(cases = cases, table = '\n    '.join(coords))
 
 def run(plotspec, dbfile):
   cases = yaml.load(open(plotspec).read())
@@ -197,6 +166,9 @@ def run(plotspec, dbfile):
     else:
       LOG.warning("Unknown plot format {0}".format(plot['format']))
       continue
+    f = open('/tmp/{0}.tex'.format(plot['jobname']), 'w')
+    f.write(latexsrc)
+    f.close()
     pdflatex = subprocess.Popen(['pdflatex', '-jobname=' + plot['jobname']], stdin=subprocess.PIPE)
     pdflatex.communicate(latexsrc)
     os.unlink('{0}.aux'.format(plot['jobname']))
