@@ -22,9 +22,9 @@ class EquivCase(PBESCase):
     return self.equiv
   
   def _makePBES(self):
-    result = tools.lpsbisim2pbes('-b' + self.equiv, self.lpsfile1, self.lpsfile2, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
-    result = tools.pbesconstelm(stdin=result['out'], memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
-    return result['out']
+    result = tools.lpsbisim2pbes('-b' + self.equiv, self.lpsfile1, self.lpsfile2, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)['out']
+    result = tools.pbesconstelm(stdin=result, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)['out']
+    return result
   
 class Case(TempObj):
   def __init__(self, description, spec1, spec2):
@@ -47,16 +47,16 @@ class Case(TempObj):
     '''Linearises self.spec1 and self.spec2 and applies lpssuminst to the 
        resulting LPSs.'''
     log.info('Linearising LPSs for {0}'.format(self))
-    result1 = tools.mcrl22lps('-fnD', stdin=self.spec1, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
-    result2 = tools.mcrl22lps('-fnD', stdin=self.spec2, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
+    result1 = tools.mcrl22lps('-fnD', stdin=self.spec1, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)['out']
+    result2 = tools.mcrl22lps('-fnD', stdin=self.spec2, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)['out']
     log.info('Applying lpssuminst to LPSs for {0}'.format(self))
-    result1 = tools.lpssuminst('-f', stdin=result1['out'], memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
-    result2 = tools.lpssuminst('-f', stdin=result2['out'], memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)
-    lpsfile1 = self._newTempFile('lps')
-    lpsfile1.write(result1['out'])
+    result1 = tools.lpssuminst('-f', stdin=result1, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)['out']
+    result2 = tools.lpssuminst('-f', stdin=result2, memlimit=LPSTOOLS_MEMLIMIT, timeout=LPSTOOLS_TIMEOUT)['out']
+    lpsfile1 = self._newTempFile('lps', ".spec1")
+    lpsfile1.write(result1)
     lpsfile1.close()
-    lpsfile2 = self._newTempFile('lps')
-    lpsfile2.write(result2['out'])
+    lpsfile2 = self._newTempFile('lps', ".spec2")
+    lpsfile2.write(result2)
     lpsfile2.close()
     return lpsfile1.name, lpsfile2.name
   
@@ -68,8 +68,8 @@ class Case(TempObj):
   
   def phase1(self, log):
     log.info('Finalising {0}'.format(self))
-    for filename in self.__files:
-      os.unlink(filename)
+#    for filename in self.__files:
+#      os.unlink(filename)
     for r in self.results:
       self.result['instances'].append(r.result)
 
@@ -84,7 +84,7 @@ class SameParamCase(Case):
 def getcases(debugOnly = False):
   if debugOnly:
     return \
-      [SameParamCase('Buffer', 'ABP', windowsize=1, capacity=1, datasize=2)]
+      [SameParamCase('ABP', 'CABP', windowsize=1, capacity=1, datasize=d) for d in [2] ]
      
   else:
     datarange = [2,4]

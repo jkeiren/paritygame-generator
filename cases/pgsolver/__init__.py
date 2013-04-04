@@ -55,13 +55,13 @@ def getcases(debugOnly = False):
     [Case('elevatorverification', n) for n in range(3, 8)] + \
     [Case('elevatorverification', '-u', n) for n in range(3, 8)] + \
     [Case('towersofhanoi', n) for n in range(5, 12)] + \
-    [Case('cliquegame', n) for n in [100, 200, 500, 1000, 2000] ] + \
+    [Case('cliquegame', n) for n in [100, 200, 500, 1000, 2000, 5000, 10000] ] + \
     [Case('jurdzinskigame', n, m) for n in [50, 100, 200, 500] for m in [50, 100, 200, 500] ] + \
-    [Case('laddergame', n) for n in [100, 200, 500, 1000, 2000, 5000] ] + \
-    [Case('modelcheckerladder', n) for n in [100, 200, 500, 1000, 2000, 5000] ] + \
-    [Case('recursiveladder', n) for n in [100, 200, 500, 1000, 2000, 5000] ] + \
+    [Case('laddergame', n) for n in [100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000] ] + \
+    [Case('modelcheckerladder', n) for n in [100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000] ] + \
+    [Case('recursiveladder', n) for n in [100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000] ] + \
     [Case('randomgame', n, 10, 1, 20, id=id) for id in range(0,nRandom) for n in [1000, 5000, 10000, 20000, 50000] ] + \
-    [Case('clusteredrandomgame', n, 10, 1, 50, 10, 0, 5, 1, 10, id=id) for id in range(0,nRandom) for n in [1000, 5000, 10000, 20000, 50000, 100000] ] + \
-    [Case('steadygame', n, 1, 20, 1, 20, id=id) for n in [1000, 5000, 10000, 20000, 50000] for id in range(0,nRandom)]
+    [Case('clusteredrandomgame', n, 10, 1, 50, 10, 0, 5, 1, 10, id=id) for id in range(0,nRandom) for n in [1000, 5000, 10000, 20000, 50000, 100000, 200000] ] + \
+    [Case('steadygame', n, 1, 20, 1, 20, id=id) for n in [1000, 5000, 10000, 20000, 50000, 10000] for id in range(0,nRandom)]
     
     
