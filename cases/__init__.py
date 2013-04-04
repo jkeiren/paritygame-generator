@@ -94,6 +94,9 @@ class PGInfoTask(TempObj):
     self.result['pginfo'] = None
     self.result['yamlfile'] = None
     self.result['option'] = self.__option
+
+  def pgfile(self):
+    return self.__pgfile
     
   def phase0(self, log):
     yamlfile = self._newTempFilename("yaml")
