@@ -68,7 +68,10 @@ cd ${tooldir}
 #cd mcrl2-201210.1
 mkdir mcrl2
 cd mcrl2
-svn checkout https://svn.win.tue.nl/repos/MCRL2/trunk src
+svn checkout https://svn.win.tue.nl/repos/MCRL2/trunk@11703 src
+cd src
+patch -p0 < ${tooldir}/pbespgsolve.patch
+cd ..
 mkdir build
 cd build
 cmake ../src -DCMAKE_INSTALL_PREFIX=${tooldir}/install \
@@ -199,57 +202,57 @@ done
 
 # GOAL - http://goal.im.ntu.edu.tw/
 ###################################
-cd ${bindir}
-wget https://www.dropbox.com/s/uh4d6gqb6ko4dbj/goal_2009_04_19.jar
+#cd ${bindir}
+#wget https://www.dropbox.com/s/uh4d6gqb6ko4dbj/goal_2009_04_19.jar
 
 ## Scala (needed for Gist)
 #
 # Note that we use version 2.9.2 here. 2.10.0 is the latest version, but gist
 # does not build with that version. Using 2.9.2 we need just two small patches.
 ##########################
-if [[ ! `which scalac` ]]; then
-  cd ${tooldir}
-  wget http://www.scala-lang.org/downloads/distrib/files/scala-2.9.2.tgz
-  tar -zxvf scala-2.9.2.tgz
-  cd scala-2.9.2
-  ln -s ${tooldir}/scala-2.9.2/bin/fsc ${bindir}
-  ln -s ${tooldir}/scala-2.9.2/bin/scala ${bindir}
-  ln -s ${tooldir}/scala-2.9.2/bin/scalac ${bindir}
-  ln -s ${tooldir}/scala-2.9.2/bin/scaladoc ${bindir}
-  ln -s ${tooldir}/scala-2.9.2/bin/scalap ${bindir}
-fi
-
-# gist - http://pub.ist.ac.at/gist/
-###################################
-cd ${tooldir}
-wget https://www.dropbox.com/s/q9u1l0otcib038u/package.tar.gz
-tar -zxvf package.tar.gz
-mv ${tooldir}/tool ${tooldir}/gist
-cd gist
-
-sed -i "s|GOAL|${bindir}/goal_2009_04_19.jar|g" ${tooldir}/gist/src/specification/LTL.scala
-sed -i "s/JAVA/java/g" ${tooldir}/gist/src/specification/LTL.scala
-sed -i "s|TEMP|/tmp|g" ${tooldir}/gist/src/specification/LTL.scala
-
-sed -i "s|GOAL|$bindir/goal_2009_04_19.jar|g" ${tooldir}/gist/src/specification/BuchiAutomaton.scala
-sed -i "s/JAVA/java/g" ${tooldir}/gist/src/specification/BuchiAutomaton.scala
-sed -i "s|TEMP|/tmp|g" ${tooldir}/gist/src/specification/BuchiAutomaton.scala
-
-sed -i "s|PGSOLVER|${bindir}/pgsolver|g" ${tooldir}/gist/src/newgames/ParityGame.scala
-
-patch -p1 < ${tooldir}/gist.patch
-make
-
-echo "#!/bin/bash" > ${bindir}/gist
-for jar in ${tooldir}/gist/lib/*.jar; do
-  echo "CLASSPATH=\$CLASSPATH:$jar" >> ${bindir}/gist
-done
-echo "cd ${tooldir}/gist/build" >> ${bindir}/gist
-echo "if [ \"$@\" == \"cui\" ]; then" >> ${bindir}/gist
-echo "  scala -howtorun:object cui.main" >> ${bindir}/gist
-echo "else" >> ${bindir}/gist
-echo "  scala -howtorun:object gui.main" >> ${bindir}/gist
-echo "fi" >> ${bindir}/gist
-echo "cd -" >> ${bindir}/gist
-
-chmod +x ${bindir}/gist
+#if [[ ! `which scalac` ]]; then
+#  cd ${tooldir}
+#  wget http://www.scala-lang.org/downloads/distrib/files/scala-2.9.2.tgz
+#  tar -zxvf scala-2.9.2.tgz
+#  cd scala-2.9.2
+#  ln -s ${tooldir}/scala-2.9.2/bin/fsc ${bindir}
+#  ln -s ${tooldir}/scala-2.9.2/bin/scala ${bindir}
+#  ln -s ${tooldir}/scala-2.9.2/bin/scalac ${bindir}
+#  ln -s ${tooldir}/scala-2.9.2/bin/scaladoc ${bindir}
+#  ln -s ${tooldir}/scala-2.9.2/bin/scalap ${bindir}
+#fi
+#
+## gist - http://pub.ist.ac.at/gist/
+####################################
+#cd ${tooldir}
+#wget https://www.dropbox.com/s/q9u1l0otcib038u/package.tar.gz
+#tar -zxvf package.tar.gz
+#mv ${tooldir}/tool ${tooldir}/gist
+#cd gist
+#
+#sed -i "s|GOAL|${bindir}/goal_2009_04_19.jar|g" ${tooldir}/gist/src/specification/LTL.scala
+#sed -i "s/JAVA/java/g" ${tooldir}/gist/src/specification/LTL.scala
+#sed -i "s|TEMP|/tmp|g" ${tooldir}/gist/src/specification/LTL.scala
+#
+#sed -i "s|GOAL|$bindir/goal_2009_04_19.jar|g" ${tooldir}/gist/src/specification/BuchiAutomaton.scala
+#sed -i "s/JAVA/java/g" ${tooldir}/gist/src/specification/BuchiAutomaton.scala
+#sed -i "s|TEMP|/tmp|g" ${tooldir}/gist/src/specification/BuchiAutomaton.scala
+#
+#sed -i "s|PGSOLVER|${bindir}/pgsolver|g" ${tooldir}/gist/src/newgames/ParityGame.scala
+#
+#patch -p1 < ${tooldir}/gist.patch
+#make
+#
+#echo "#!/bin/bash" > ${bindir}/gist
+#for jar in ${tooldir}/gist/lib/*.jar; do
+#  echo "CLASSPATH=\$CLASSPATH:$jar" >> ${bindir}/gist
+#done
+#echo "cd ${tooldir}/gist/build" >> ${bindir}/gist
+#echo "if [ \"$@\" == \"cui\" ]; then" >> ${bindir}/gist
+#echo "  scala -howtorun:object cui.main" >> ${bindir}/gist
+#echo "else" >> ${bindir}/gist
+#echo "  scala -howtorun:object gui.main" >> ${bindir}/gist
+#echo "fi" >> ${bindir}/gist
+#echo "cd -" >> ${bindir}/gist
+#
+#chmod +x ${bindir}/gist

@@ -1,0 +1,87 @@
+Index: tools/pbespgsolve/pbespgsolve.h
+===================================================================
+--- tools/pbespgsolve/pbespgsolve.h	(revision 11703)
++++ tools/pbespgsolve/pbespgsolve.h	(working copy)
+@@ -206,26 +206,14 @@
+       }
+     }
+ 
+-    template <typename Container>
+-    bool run(pbes<Container>& p)
++    bool run(ParityGame& pg, const verti goal_v)
+     {
+-      m_timer.start("initialization");
+-      mCRL2log(log::verbose) << "Generating parity game..."  << std::endl;
+-      // Generate the game from a PBES:
+-      verti goal_v;
+-      ParityGame pg;
+-
+-      pg.assign_pbes(p, &goal_v, StaticGraph::EDGE_BIDIRECTIONAL, m_options.rewrite_strategy); // N.B. mCRL2 could raise an exception here
+-
+-      mCRL2log(log::verbose) << "Game: " << pg.graph().V() << " vertices, " << pg.graph().E() << " edges." << std::endl;
+-
+       if (!m_options.only_generate)
+       {
+         mCRL2log(log::verbose) << "Solving..." << std::endl;
+ 
+         // Create a solver:
+         std::auto_ptr<ParityGameSolver> solver(solver_factory->create(pg));
+-        m_timer.finish("initialization");
+ 
+         // Solve the game:
+         m_timer.start("solving");
+@@ -249,6 +237,22 @@
+       }
+       return true;
+     }
++
++    template <typename Container>
++    bool run(pbes<Container>& p)
++    {
++      m_timer.start("initialization");
++      mCRL2log(log::verbose) << "Generating parity game..."  << std::endl;
++      // Generate the game from a PBES:
++      verti goal_v;
++      ParityGame pg;
++
++      pg.assign_pbes(p, &goal_v, StaticGraph::EDGE_BIDIRECTIONAL, m_options.rewrite_strategy); // N.B. mCRL2 could raise an exception here
++      mCRL2log(log::verbose) << "Game: " << pg.graph().V() << " vertices, " << pg.graph().E() << " edges." << std::endl;
++      m_timer.finish("initialization");
++
++      return run(pg, goal_v);
++    }
+ };
+ 
+ } // namespace pbes_system
+Index: tools/pbespgsolve/pbespgsolve.cpp
+===================================================================
+--- tools/pbespgsolve/pbespgsolve.cpp	(revision 11703)
++++ tools/pbespgsolve/pbespgsolve.cpp	(working copy)
+@@ -118,10 +118,24 @@
+       mCRL2log(verbose) << "  verify solution:   " << std::boolalpha << m_options.verify_solution << std::endl;
+       mCRL2log(verbose) << "  only generate:   " << std::boolalpha << m_options.only_generate << std::endl;
+ 
+-      pbes<> p;
+-      load_pbes(p, input_filename(), pbes_input_format());
++      bool value;
++      if(pbes_input_format() == pbes_file_pgsolver)
++      {
++        pbespgsolve_algorithm algorithm(timer(), m_options);
++        ParityGame pg;
++        std::ifstream is(input_filename());
++        pg.read_pgsolver(is);
++        value = algorithm.run(pg, 0);
++      }
++      else
++      {
++        pbes<> p;
++        timer().start("load");
++        load_pbes(p, input_filename(), pbes_input_format());
++        timer().finish("load");
+ 
+-      bool value = pbespgsolve(p, timer(), m_options);
++        value = pbespgsolve(p, timer(), m_options);
++      }
+       std::string result = (value ? "true" : "false");
+       mCRL2log(verbose) << "The solution for the initial variable of the pbes is " << result << std::endl;
+       std::cout << result << std::endl;
