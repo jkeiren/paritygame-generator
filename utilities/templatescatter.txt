@@ -1,6 +1,7 @@
 \documentclass{minimal}
 \usepackage[active,tightpage]{preview}
 \usepackage{pgfplots}
+\pgfplotsset{compat=1.8}
 \begin{document}
 \begin{preview}
   \begin{tikzpicture}[mark size=2.5pt,remember picture,scale=0.77]
@@ -9,14 +10,17 @@
                        xlabel={%Xlabel},
                        ylabel={%Ylabel},
                        xmode={%xmode},
-                       ymode={%ymode},
+                       ymode={%ymode}
+                       %maxes,
+                       xmin=0,
+                       ymin=0,
                        scatter/classes={
                          modelchecking={mark=x},
                          equivalence={mark=o},
                          mlsolver={mark=+}
                        },
+                       legend pos=outer north east,
                        legend image post style={xshift=0.5cm},
-                       legend pos=south east,
                        legend cell align=left,
                        legend style={
                          nodes={right}

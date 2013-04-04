@@ -1,52 +1,142 @@
 - xcase: orig
-  ycase: bisim
-  xval: size
-  yval: size
-  format: histogram
-  jobname: sizes_ob
-- xval: size
-  yval: size
-  xcase: orig
-  ycase: bisim
-  format: boxplot
-  jobname: reduction_ob  
+  ycase: orig
+  xval: bfs_height
+  yval: scc_quotient_height
+  xmode: log
+  ymode: log
+  Xlabel: "BFS levels"
+  Ylabel: "SCC quotient height"
+  jobname: bfs_levels_vs_sccs_quotient_height_orig
+  format: scatterplot
 - xcase: orig
   ycase: orig
-  xval: size
+  xval: avg_degree
+  yval: avg_3_neighbourhood
+  xmode: normal
+  ymode: normal
+  xmax: 7
+  ymax: 200
+  Xlabel: "Average degree"
+  Ylabel: "Average 3-neighbourhood size"
+  jobname: avg_degree_vs_avg_3_neighbourhood_orig
+  format: scatterplot
+- xcase: orig
+  ycase: orig
+  xval: vertices
+  yval: nontrivial_sccs
+  xmode: log
+  ymode: log
+  Xlabel: "Vertices"
+  Ylabel: "Non-trivial SCCS"
+  jobname: vertices_vs_nontrivial_sccs_orig
+  format: scatterplot
+- xcase: orig
+  ycase: orig
+  xval: vertices
+  yval: avg_3_neighbourhood
+  xmode: log
+  ymode: log
+  Xlabel: "Vertices"
+  Ylabel: "Avg 3-neighbourhood"
+  jobname: vertices_vs_avg_3_neighbourhood_orig
+  format: scatterplot
+- xcase: orig
+  ycase: orig
+  xval: vertices
+  yval: edges
+  xmode: log
+  ymode: log
+  Xlabel: "Vertices"
+  Ylabel: "Edges"
+  jobname: vertices_vs_edges_orig
+  format: scatterplot
+- xcase: orig
+  ycase: orig
+  xval: vertices
   yval: alternation_depth
   xmode: log
   ymode: normal
-  Xlabel: "Size"
+  Xlabel: "Vertices"
   Ylabel: "Alternation depth"
   jobname: size_vs_ad_orig
   format: scatterplot
 - xcase: orig
   ycase: orig
-  xval: size
+  xval: vertices
   yval: diameter
   xmode: log
-  ymode: normal
-  Xlabel: "Size"
+  ymode: log
+  Xlabel: "Vertices"
   Ylabel: "Diameter"
   jobname: size_vs_diameter_orig
   format: scatterplot
 - xcase: orig
   ycase: orig
-  xval: size
+  xval: vertices
+  yval: bfs_height
+  xmode: log
+  ymode: log
+  Xlabel: "Vertices"
+  Ylabel: "BFS height"
+  jobname: size_vs_bfs_levels_orig
+  format: scatterplot
+- xcase: orig
+  ycase: orig
+  xval: bfs_height
+  yval: diameter
+  xmode: log
+  ymode: log
+  Xlabel: "BFS Height"
+  Ylabel: "Diameter"
+  jobname: bfs_levels_vs_diameter_orig
+  format: scatterplot
+- xcase: orig
+  ycase: orig
+  xval: vertices
+  yval: diamonds
+  xmode: log
+  ymode: log
+  Xlabel: "Vertices"
+  Ylabel: "Diamonds"
+  jobname: size_vs_diamonds_orig
+  format: scatterplot
+- xcase: orig
+  ycase: orig
+  xval: vertices
+  yval: even_diamonds
+  xmode: log
+  ymode: log
+  Xlabel: "Vertices"
+  Ylabel: "Even diamonds"
+  jobname: size_vs_even_diamonds_orig
+  format: scatterplot
+- xcase: orig
+  ycase: orig
+  xval: vertices
+  yval: odd_diamonds
+  xmode: log
+  ymode: log
+  Xlabel: "Vertices"
+  Ylabel: "Odd diamonds"
+  jobname: size_vs_odd_diamonds_orig
+  format: scatterplot  
+- xcase: orig
+  ycase: orig
+  xval: vertices
   yval: girth
   xmode: log
   ymode: normal
-  Xlabel: "Size"
+  Xlabel: "Vertices"
   Ylabel: "Girth"
   jobname: size_vs_girth_orig
   format: scatterplot
 - xcase: orig
   ycase: orig
-  xval: size
+  xval: vertices
   yval: avg_degree
   xmode: log
   ymode: normal
-  Xlabel: "Size"
+  Xlabel: "Vertices"
   Ylabel: "Average degree"
   jobname: size_vs_avg_degree_orig
   format: scatterplot
@@ -55,7 +145,7 @@
   xval: size
   yval: max_outdegree
   xmode: log
-  ymode: normal
+  ymode: log
   Xlabel: "Size"
   Ylabel: "Max out-degree"
   jobname: size_vs_max_out_degree_orig
@@ -65,7 +155,7 @@
   xval: size
   yval: max_indegree
   xmode: log
-  ymode: normal
+  ymode: log
   Xlabel: "Size"
   Ylabel: "Max in-degree"
   jobname: size_vs_max_in_degree_orig
