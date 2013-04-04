@@ -10,6 +10,26 @@
   format: scatterplot
 - xcase: orig
   ycase: orig
+  xval: vertices
+  yval: priorities
+  xmode: log
+  ymode: log
+  Xlabel: "Vertices"
+  Ylabel: "Number of priorities"
+  jobname: vertices_vs_priorities_orig
+  format: scatterplot
+- xcase: orig
+  ycase: orig
+  xval: vertices
+  yval: priorities
+  xmode: log
+  ymode: log
+  Xlabel: "Vertices"
+  Ylabel: "Number of priorities"
+  jobname: vertices_vs_priorities_logscale_orig
+  format: scatterplot
+- xcase: orig
+  ycase: orig
   xval: avg_degree
   yval: avg_3_neighbourhood
   xmode: normal
@@ -55,7 +75,7 @@
   xval: vertices
   yval: alternation_depth
   xmode: log
-  ymode: normal
+  ymode: log
   Xlabel: "Vertices"
   Ylabel: "Alternation depth"
   jobname: size_vs_ad_orig
@@ -125,7 +145,7 @@
   xval: vertices
   yval: girth
   xmode: log
-  ymode: normal
+  ymode: log
   Xlabel: "Vertices"
   Ylabel: "Girth"
   jobname: size_vs_girth_orig

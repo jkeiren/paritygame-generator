@@ -76,6 +76,7 @@ WHERE X.id = gx.id
 
 def query(conn, xcase, ycase, xval, yval):
   c = conn.cursor()
+  LOG.debug("Executing query {0}".format(_QUERY.format(xval, yval, xcase, ycase)))
   return c.execute(_QUERY.format(xval, yval, xcase, ycase))
   
 # Compute the data that should be plotted.
@@ -89,6 +90,7 @@ def getplotdata(conn, xcase, ycase, xval, yval, xmode = None, ymode = None):
   data = query(conn, xcase, ycase, xval, yval)
   
   for row in data:
+    LOG.debug("  got {0} in cluster {1}".format(row, getCluster(row[2])))
     x,y = row[0], row[1]
     if xval == 'times' and x is None:
       x = 4000
