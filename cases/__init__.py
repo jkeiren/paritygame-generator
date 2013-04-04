@@ -360,7 +360,7 @@ class PBESCase(PGCase):
     pgfile = self._newTempFilename('gm')
     try:
       result = tools.pbes2bes('-s0', '-rjittyc', '-opgsolver', pbes.name, pgfile, memlimit=PBES2BES_MEMLIMIT, timeout=PBES2BES_TIMEOUT, timed=True)
-      os.unlink(pbes.name)
+#      os.unlink(pbes.name)
     except (OutOfMemory, Timeout) as e:
       result = e.result
       
