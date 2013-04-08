@@ -17,7 +17,9 @@
                        scatter/classes={
                          modelchecking={mark=x},
                          equivalence={mark=o},
-                         mlsolver={mark=+}
+                         mlsolver={mark=+},
+                         specialcases={mark=square},
+                         random={mark=triangle}
                        },
                        legend pos=outer north east,
                        legend image post style={xshift=0.5cm},
@@ -30,7 +32,7 @@
         x, y, cluster
         %values 
       };
-      \legend{~modelchecking, ~equivalence, ~mlsolver}
+      \legend{~modelchecking, ~equivalence, ~mlsolver, ~specialcases, ~random}
     \end{axis}
   \end{tikzpicture}
 \end{preview}

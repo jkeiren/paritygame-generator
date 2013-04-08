@@ -70,13 +70,16 @@ WHERE X.id = gx.id
   AND gy.instance = instances.id
   AND gx.instance = instances.id
   AND instances.caseid = cases.id
-  AND xval IS NOT NULL
-  AND yval IS NOT NULL
+  {4}
+  {5}
 '''
 
 def query(conn, xcase, ycase, xval, yval):
   c = conn.cursor()
-  return c.execute(_QUERY.format(xval, yval, xcase, ycase))
+  xvalnull = '' if xval == 'times' else 'AND xval IS NOT NULL'
+  yvalnull = '' if yval == 'times' else 'AND xval IS NOT NULL '
+  LOG.debug("Executing query {0}".format(_QUERY.format(xval, yval, xcase, ycase, xvalnull, yvalnull)))
+  return c.execute(_QUERY.format(xval, yval, xcase, ycase, xvalnull, yvalnull))
   
 # Compute the data that should be plotted.
 # key determines the field that is used (sizes or times)
@@ -89,6 +92,7 @@ def getplotdata(conn, xcase, ycase, xval, yval, xmode = None, ymode = None):
   data = query(conn, xcase, ycase, xval, yval)
   
   for row in data:
+    LOG.debug("  got {0} in cluster {1}".format(row, getCluster(row[2])))
     x,y = row[0], row[1]
     if xval == 'times' and x is None:
       x = 4000

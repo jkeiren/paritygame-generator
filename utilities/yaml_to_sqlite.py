@@ -18,7 +18,8 @@ CREATE TABLE "instances" (
 CREATE TABLE "games" (
     "id" INTEGER PRIMARY KEY,
     "instance" INTEGER NOT NULL,
-    "reduction" TEXT NOT NULL
+    "reduction" TEXT NOT NULL,
+    "file" TEXT
 );
 CREATE TABLE "gamesizes" (
     "id" INTEGER PRIMARY KEY,
@@ -79,11 +80,23 @@ CREATE TABLE "reduction" (
     "tool" TEXT,
     "time" REAL
 );
+CREATE VIEW "query_gamesizes" AS
+SELECT gamesizes.*,
+       gamesizes.vertices+gamesizes.edges 'size',
+       gamesizes.sccs-gamesizes.trivial_sccs 'nontrivial_sccs',
+       solving.time 'times'
+FROM gamesizes, games, solving
+WHERE gamesizes.id = games.id
+  AND solving.id = games.id;
 '''
 
 def loaddetaildata(conn, gameid, detailfile, datadir):
   detailfile = os.path.join(datadir, detailfile[detailfile.find('cases/'):])
-  data = yaml.load(open(detailfile, 'r'))
+  try:
+    data = yaml.load(open(detailfile, 'r'))
+  except Exception as e:
+    print e
+    return
   
   c = conn.cursor()
   query = '''
@@ -216,7 +229,12 @@ def loaddata(conn, data, datadir, caseid=None):
       equivalences = ['orig', 'bisim', 'fmib', 'stut', 'gstut']
       games = {}
       for reduction in equivalences:
-        c.execute('INSERT INTO games VALUES (null, ?, ?)', (instanceid, reduction))
+        red = reduction
+        if red == 'orig':
+          red = 'original'
+        yamlfile = data.get('files',{}).get(reduction, None)
+        gmfile = os.path.splitext(yamlfile)[0].replace('/data/','/temp/') + '.gm'
+        c.execute('INSERT INTO games VALUES (null, ?, ?, ?)', (instanceid, reduction, gmfile))
         games[reduction] = c.execute('SELECT last_insert_rowid()').fetchone()[0]
       
       sizes = data['sizes']
@@ -248,10 +266,11 @@ def loaddata(conn, data, datadir, caseid=None):
         loaddetaildata(conn, games[reduction], files[red], datadir)
         conn.commit()
         
-def run(resultfile, sqlitefile):
+def run(resultfile, sqlitefile, initialise):
   conn = sqlite3.connect(sqlitefile)
-  conn.executescript(SCHEMA_QUERY)
-  conn.commit()
+  if initialise:
+    conn.executescript(SCHEMA_QUERY)
+    conn.commit()
   
   datadir = os.path.dirname(os.path.abspath(resultfile))
   data = yaml.load(open(resultfile, 'r'))
@@ -265,6 +284,8 @@ def runCmdLine():
   parser = optparse.OptionParser(usage='usage: %prog [options] resultfile sqlitefile')
   parser.add_option('-v', action='count', dest='verbosity',
                     help='Be more verbose. Use more than once to increase verbosity even more.')
+  parser.add_option('-i', action='store_true', dest='initialise',
+                    help='Intialise database with its schema.')
   options, args = parser.parse_args()
   if len(args) < 2:
     parser.error(parser.usage)
@@ -280,7 +301,7 @@ def runCmdLine():
   if options.verbosity > 1:
     LOG.setLevel(logging.DEBUG)
   
-  run(resultfile, sqlitefile)
+  run(resultfile, sqlitefile, options.initialise)
 
 if __name__ == '__main__':
   runCmdLine()
