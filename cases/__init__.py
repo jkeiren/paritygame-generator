@@ -194,6 +194,9 @@ class SolveTask(pool.Task):
     self.result['sizes'] = 'unknown'
     self.result['solution'] = 'unknown'
     self.name = name
+
+  def pgfile(self):
+    return self.__pgfile
   
   def run(self, log):
     if self.name.startswith('pbespgsolve'):
@@ -257,16 +260,24 @@ class PGCase(TempObj):
   def __reduce(self, pgfile, equiv):
     '''Reduce the PG modulo equiv using pgconvert.'''
     reduced = self._newTempFilename('gm')
-    result = tools.pgconvert('-ve{0}'.format(equiv), pgfile, reduced, timed=True, timeout=PGCONVERT_TIMEOUT, memlimit=PGCONVERT_MEMLIMIT)
-    self.result['sizes']['orig'] = {'vertices': result['filter']['vorig'], 'edges': result['filter']['eorig']}
-    self.result['sizes'][equiv] = {'vertices': result['filter']['vred'], 'edges': result['filter']['ered']}
-    self.result['times'].setdefault(equiv, {})['reduction'] = result['times']#['reduction']
+    try:
+      result = tools.pgconvert('-ve{0}'.format(equiv), pgfile, reduced, timed=True, timeout=PGCONVERT_TIMEOUT, memlimit=PGCONVERT_MEMLIMIT)
+      self.result['sizes']['orig'] = {'vertices': result['filter']['vorig'], 'edges': result['filter']['eorig']}
+      self.result['sizes'][equiv] = {'vertices': result['filter']['vred'], 'edges': result['filter']['ered']}
+      self.result['times'].setdefault(equiv, {})['reduction'] = result['times']#['reduction']
+    except tools.Timeout:
+      log.info('Timeout')
+      self.result['times'] = 'timeout'
+    except tools.OutOfMemory:
+      log.info('Out of memory')
+      self.result['memory'] = 'outofmemory'
     return reduced
 
   def __solve(self, pgfile):
     '''Solve besfile using pbsespgsolve and pgsolver.'''
-    self.subtasks += [
-      SolveTask('pbespgsolve', pgfile, '-srecursive')
+    if os.path.exists(pgfile):
+      self.subtasks += [
+        SolveTask('pbespgsolve', pgfile, '-srecursive')
 #      SolveTask('pbespgsolve (spm)', pgfile),
 #      SolveTask('pbespgsolve (recursive)', pgfile, '-srecursive'),
 #      SolveTask('pgsolver (optimized spm)', pgfile, '-sp'),
@@ -277,7 +288,7 @@ class PGCase(TempObj):
 #      SolveTask('pgsolver (unoptimized recursive)', pgfile, '-re', '-dgo', '-dsg', '-dlo'),
 #      SolveTask('pgsolver (unoptimized bigstep)', pgfile, '-bs', '-dgo', '-dsg', '-dlo'),
 #      SolveTask('pgsolver (unoptimized strategy improvement)', pgfile, '-si', '-dgo', '-dsg', '-dlo')
-    ]
+      ]
 
   def phase0(self, log):
     try:
