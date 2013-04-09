@@ -81,19 +81,19 @@ CREATE TABLE "reduction" (
     "time" REAL
 );
 CREATE VIEW "query_gamesizes" AS
-select cases.name,
+SELECT cases.name,
        instances.name,
        games.reduction,
        gamesizes.*,
        gamesizes.vertices+gamesizes.edges 'size',
        gamesizes.sccs-gamesizes.trivial_sccs 'nontrivial_sccs',
-       reduction.time + solving.time 'times'
-from gamesizes, games, cases, instances, reduction, solving
-where gamesizes.id = games.id
+       solving.time + reduction.time 'times'
+FROM gamesizes, games, solving, cases, instances, reduction
+WHERE gamesizes.id = games.id
   AND games.instance = instances.id
   AND cases.id = instances.caseid
-  AND reduction.idto = games.id
   AND solving.id = games.id
+  AND reduction.id = games.id
 '''
 
 def loaddetaildata(conn, gameid, detailfile, datadir):
@@ -258,7 +258,7 @@ def loaddata(conn, data, datadir, caseid=None):
         if reduction != 'orig':
           c.execute('INSERT INTO reduction VALUES (null, ?, ?, ?, ?)', (games['orig'], games[reduction], 'pgconvert', times[reduction].get('reduction', {}).get('reduction', None)))
         else: # for efficient querying
-          c.execute('INSERT INTO reduction VALUES (null, ?, ?, ?, ?)', (games['orig'], games['orig'], 'pgconvert', 0.0))
+          c.execute('INSERT INTO reduction VALUES (null, ?, ?, ?, ?)', (games['orig'], games['orig'], 'dummy', 0.0))
           
         solvingtime = times[red].get('pbespgsolve', {})
         if solvingtime == 'timeout':

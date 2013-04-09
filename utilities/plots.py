@@ -77,7 +77,7 @@ WHERE X.id = gx.id
 def query(conn, xcase, ycase, xval, yval):
   c = conn.cursor()
   xvalnull = '' if xval == 'times' else 'AND xval IS NOT NULL'
-  yvalnull = '' if yval == 'times' else 'AND xval IS NOT NULL '
+  yvalnull = '' if yval == 'times' else 'AND yval IS NOT NULL '
   LOG.debug("Executing query {0}".format(_QUERY.format(xval, yval, xcase, ycase, xvalnull, yvalnull)))
   return c.execute(_QUERY.format(xval, yval, xcase, ycase, xvalnull, yvalnull))
   
