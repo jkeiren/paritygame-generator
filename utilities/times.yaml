@@ -6,8 +6,8 @@
   Ymax: 4000
   Xmin: 0.01
   Ymin: 0.01
-  xmode: normal
-  ymode: normal
+  xmode: log
+  ymode: log
   Xlabel: "Original"
   Ylabel: "Governed stuttering"
   jobname: times_gstut_orig
@@ -20,8 +20,8 @@
   Ymax: 4000
   Xmin: 0.01
   Ymin: 0.01
-  xmode: normal
-  ymode: normal
+  xmode: log
+  ymode: log
   Xlabel: "Original"
   Ylabel: "Stuttering"
   jobname: times_stut_orig
@@ -34,8 +34,8 @@
   Ymax: 4000
   Xmin: 0.01
   Ymin: 0.01
-  xmode: normal
-  ymode: normal
+  xmode: log
+  ymode: log
   Xlabel: "Original"
   Ylabel: "Bisimulation"
   jobname: times_bisim_orig
@@ -48,8 +48,8 @@
   Ymax: 4000
   Xmin: 0.01
   Ymin: 0.01
-  xmode: normal
-  ymode: normal
+  xmode: log
+  ymode: log
   Xlabel: "Original"
   Ylabel: "Governed bisimulation"
   jobname: times_gov_orig

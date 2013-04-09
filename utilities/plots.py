@@ -94,15 +94,19 @@ def getplotdata(conn, xcase, ycase, xval, yval, xmode = None, ymode = None):
   for row in data:
     LOG.debug("  got {0} in cluster {1}".format(row, getCluster(row[2])))
     x,y = row[0], row[1]
-    if xval == 'times' and x is None:
-      x = 4000
-    if yval == 'times' and y is None:
-      y = 4000
+    if xval == 'times':
+      if x is None:
+        x = 3600.0
+      x = max(min([x, 3600.0]),0.1)
+    if yval == 'times':
+      if y is None:
+        y = 3600.0
+      y = max(min([y, 3600.0]),0.1)
     
-    if xval != 'times' and xmode == 'log' and float(x) == float(0):
-      x = 1
-    if yval != 'times' and ymode == 'log' and float(y) == float(0):
-      y = 1
+    #if xval != 'times' and xmode == 'log' and float(x) == float(0):
+    #  x = 1
+    #if yval != 'times' and ymode == 'log' and float(y) == float(0):
+      #y = 1
     yield (x,y,getCluster(row[2]))
   
   
