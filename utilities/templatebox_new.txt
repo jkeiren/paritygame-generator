@@ -1,0 +1,19 @@
+\documentclass{minimal}
+\usepackage[active,tightpage]{preview}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.8}
+\usepgfplotslibrary{statistics}
+\begin{document}
+\begin{preview}
+\begin{tikzpicture}
+  \begin{axis}
+    [
+    xlabel={Reduction (\%)},
+    ytick={${yticks}},
+    yticklabels={${yticklabels}},
+    ]
+${boxes} 
+  \end{axis}
+\end{tikzpicture}
+\end{preview}
+\end{document}
