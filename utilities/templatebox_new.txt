@@ -1,18 +1,9 @@
-\documentclass{minimal}
-\usepackage[active,tightpage]{preview}
-\usepackage{pgfplots}
-\pgfplotsset{compat=1.8}
-\usepgfplotslibrary{statistics}
-
-\begin{document}
-\begin{preview}
-\begin{tikzpicture}
+\begin{tikzpicture}[mark size=2.5pt,remember picture,scale=0.77]
   \begin{axis}
-    [
-    ${xline}
+    [${xline}
     xmin=${xmin}, xmax=${xmax},
     xmode=${xmode},
-    width=6cm,
+    width=7.5cm,
     y=0.8cm,
     y axis line style={transparent},
     every non boxed x axis/.style={
@@ -29,5 +20,3 @@
 ${boxes}
   \end{axis}
 \end{tikzpicture}
-\end{preview}
-\end{document}

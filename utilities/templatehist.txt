@@ -1,9 +1,3 @@
-\documentclass{minimal}
-\usepackage[active,tightpage]{preview}
-\usepackage{pgfplots}
-\pgfplotsset{compat=1.8}
-\begin{document}
-\begin{preview}
   \begin{tikzpicture}[mark size=2.5pt,remember picture,scale=0.77]
     \begin{axis}[ybar interval,xmax=100,xtick=,
                  xlabel={\% Reduction},
@@ -16,5 +10,3 @@
       };
     \end{axis}
   \end{tikzpicture}
-\end{preview}
-\end{document}

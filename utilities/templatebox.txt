@@ -1,15 +1,8 @@
-\documentclass{minimal}
-\usepackage[active,tightpage]{preview}
-\usepackage{pgfplots,amssymb}
-\pgfplotsset{compat=1.8}
-\usetikzlibrary{plotmarks}
-\begin{document}
-\begin{preview}
   \pgfplotstableread[col sep=comma]{
       name                , index,    avg,    min,   dmax
       ${table}
   }\mytable
-  \begin{tikzpicture}
+  \begin{tikzpicture}[mark size=2.5pt,remember picture,scale=0.77]
     \begin{axis}[xmin=-5, xmax=105,
         width=6cm,
         xlabel={Reduction (\%)},
@@ -44,5 +37,3 @@
       table[x=dmax,y=index] {\mytable};
     \end{axis}
   \end{tikzpicture}
-\end{preview}
-\end{document}
