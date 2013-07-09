@@ -185,19 +185,31 @@ def boxplot_old(plotcase, conn):
 
 def boxplot(plotcase, conn):
   LOG.debug("Creating boxplot for case {0}".format(plotcase))
+  mode = 'reduction'
+  if plotcase.has_key('mode'):
+    mode = plotcase['mode']
+  LOG.debug("Mode: {0}".format(mode))
+  
   values = [(x, y, cluster) for x, y, cluster in getplotdata(conn, plotcase['xcase'], plotcase['ycase'], plotcase['xval'], plotcase['yval'])]
   LOG.debug("Obtained {0} values".format(len(values)))
+  LOG.debug("Values:\n {0}".format("\n".join(map(str, values))))
   data = []
   for cluster in clusters.keys():
     clustervalues = filter(lambda x: x[2] == cluster, values)
     if clustervalues == []: continue
-    reductions = map(lambda x: 100.0 - 100.0 * float(x[1]) / float(x[0]), clustervalues)
-    reductions = sorted(reductions)
-    if reductions == []:
-      LOG.warning("No values")
+    
+    if mode == 'reduction':
+      plotvalues = map(lambda x: 100.0 - (100.0 * (float(x[1]) / float(x[0]))), clustervalues)
+    elif mode == 'speedup':
+      plotvalues = map(lambda x: float(x[0]) / float(x[1]), clustervalues)
+      LOG.debug("Zipped:\n {0}".format("\n".join(map(str, zip(clustervalues, plotvalues)))))
+      
+    if plotvalues == []:
+      LOG.warning("No values to plot")
       continue
 
-    data.append((cluster, reductions))  
+    plotvalues = sorted(plotvalues)
+    data.append((cluster, plotvalues))
 
 # The following computes the information manually, and does not take outliers
 # into account.
@@ -224,7 +236,7 @@ def boxplot(plotcase, conn):
 #    },
 #    ] coordinates {};''')
 
-  boxtemplate = string.Template('''    \\addplot+[
+  boxtemplate = string.Template('''    \\addplot+[black,mark=x,mark color=black,
     boxplot={average=auto}]
       table[row sep=\\\\,y index=0] {
         data\\\\
@@ -236,12 +248,27 @@ def boxplot(plotcase, conn):
   yticklabels = []
 
   for index, x in enumerate(data):
-    print x
     boxes.append(boxtemplate.substitute(data = "\\\\ ".join(map(lambda y: str(y), x[1]))))
     if plotcase.get('yticklabels', True):
       yticklabels.append(x[0])
     yticks.append(str(index+1))
 
+  if mode == 'reduction':
+    xlabel = "Reduction (\%)"
+    xmin = -5.0
+    xmax = 105.0
+    xmode = 'normal'
+    xline = ''
+  elif mode == 'speedup':
+    xlabel = "Speedup"
+    xmin = 0.0
+    xmax = 0.0
+    for (cluster, values) in data:
+      xmax = max([xmax] + values)
+    xmode = 'log'
+    xline = '''extra x ticks = 1,
+    extra x tick labels = ,
+    extra x tick style = { grid = major },'''
 
 #  print data  
 #
@@ -254,9 +281,9 @@ def boxplot(plotcase, conn):
 #    if plotcase.get('yticklabels', True):
 #      yticklabels.append(x[0])
 #    yticks.append(str(index+1))
-  
+
   latexsrc = string.Template(open('templatebox_new.txt').read())
-  return latexsrc.substitute(yticks = ",".join(yticks), yticklabels= ",".join(yticklabels), boxes = "\n".join(boxes))
+  return latexsrc.substitute(yticks = ",".join(yticks), yticklabels= ",".join(yticklabels), boxes = "\n".join(boxes), xlabel = xlabel, xmin=xmin, xmax=xmax, xmode=xmode, xline=xline)
 
 def run(plotspec, dbfile):
   cases = yaml.load(open(plotspec).read())

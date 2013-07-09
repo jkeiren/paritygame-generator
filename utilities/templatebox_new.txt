@@ -3,16 +3,30 @@
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.8}
 \usepgfplotslibrary{statistics}
+
 \begin{document}
 \begin{preview}
 \begin{tikzpicture}
   \begin{axis}
     [
-    xlabel={Reduction (\%)},
+    ${xline}
+    xmin=${xmin}, xmax=${xmax},
+    xmode=${xmode},
+    width=6cm,
+    y=0.8cm,
+    y axis line style={transparent},
+    every non boxed x axis/.style={
+         xtick align=center,
+         enlarge x limits=false,
+    },
+    axis x line=bottom,
+    ytick style={transparent},
+    ymin=0.4,
+    xlabel={${xlabel}},
     ytick={${yticks}},
     yticklabels={${yticklabels}},
     ]
-${boxes} 
+${boxes}
   \end{axis}
 \end{tikzpicture}
 \end{preview}

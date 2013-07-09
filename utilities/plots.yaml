@@ -1,5 +1,15 @@
 - xcase: orig
   ycase: orig
+  xval: vertices
+  yval: nontrivial_sccs
+  xmode: log
+  ymode: log
+  Xlabel: "Vertices"
+  Ylabel: "SCCs"
+  jobname: vertices_vs_sccs_orig
+  format: scatterplot
+- xcase: orig
+  ycase: orig
   xval: bfs_height
   yval: scc_quotient_height
   xmode: log
