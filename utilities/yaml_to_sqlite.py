@@ -93,7 +93,7 @@ WHERE gamesizes.id = games.id
   AND games.instance = instances.id
   AND cases.id = instances.caseid
   AND solving.id = games.id
-  AND reduction.id = games.id
+  AND reduction.idto = games.id
 '''
 
 def loaddetaildata(conn, gameid, detailfile, datadir):
