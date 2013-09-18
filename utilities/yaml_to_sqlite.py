@@ -82,7 +82,7 @@ CREATE TABLE "reduction" (
 );
 CREATE VIEW "query_gamesizes" AS
 SELECT cases.name,
-       instances.name,
+       instances.name 'casename',
        games.reduction,
        gamesizes.*,
        gamesizes.vertices+gamesizes.edges 'size',

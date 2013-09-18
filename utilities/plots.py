@@ -33,30 +33,6 @@ def getCluster(case):
         return cluster
   assert False
 
-# Number of vertices + number of edges
-def sizesum(sizes, equiv):
-  return int(sizes[equiv]['vertices']) + int(sizes[equiv]['edges'])
-
-def gentime(generation):
-  print generation
-  if generation.get('times', {}).has_key('total'):
-    return generation['times']['total']
-  else:
-    return 3600.0
-
-# Determine the time required for reduction + solving for equiv.
-def mintime(times, equiv):
-  if equiv == 'orig':
-    equiv = 'original'
-  reductiontime = times[equiv].pop('reduction',{}).pop('reduction', 0.0)
-
-  offset = float(reductiontime)
-  filteredtimes = []
-  if times[equiv]['pbespgsolve'] not in ['timeout', 'unknown']:
-    filteredtimes.append(times[equiv]['pbespgsolve']['solving'])
-  result = max(0.01, min(offset + min(filteredtimes + [3600.0]), 3600.0))
-  return result
-
 _QUERY = '''
 SELECT X.{0} as xval,
        Y.{1} as yval,
@@ -103,10 +79,6 @@ def getplotdata(conn, xcase, ycase, xval, yval, xmode = None, ymode = None):
         y = 3600.0
       y = max(min([y, 3600.0]),0.1)
 
-    #if xval != 'times' and xmode == 'log' and float(x) == float(0):
-    #  x = 1
-    #if yval != 'times' and ymode == 'log' and float(y) == float(0):
-      #y = 1
     yield (x,y,getCluster(row[2]))
 
 
@@ -185,18 +157,19 @@ def boxplot_old(plotcase, conn):
 
 def boxplot(plotcase, conn):
   LOG.debug("Creating boxplot for case {0}".format(plotcase))
-  mode = 'reduction'
-  if plotcase.has_key('mode'):
-    mode = plotcase['mode']
+  mode = plotcase.get('mode', 'reduction')
   LOG.debug("Mode: {0}".format(mode))
 
   values = [(x, y, cluster) for x, y, cluster in getplotdata(conn, plotcase['xcase'], plotcase['ycase'], plotcase['xval'], plotcase['yval'])]
+  if mode == 'speedup':
+    minvalue = plotcase.get('min_value', -1.0)
+    values = filter(lambda x: float(x[0]) >= minvalue or float(x[1]) >= minvalue, values)
+
   LOG.debug("Obtained {0} values".format(len(values)))
   LOG.debug("Values:\n {0}".format("\n".join(map(str, values))))
   data = []
   for cluster in clusters.keys():
     clustervalues = filter(lambda x: x[2] == cluster, values)
-    if clustervalues == []: continue
 
     if mode == 'reduction':
       plotvalues = map(lambda x: 100.0 - (100.0 * (float(x[1]) / float(x[0]))), clustervalues)
@@ -205,36 +178,12 @@ def boxplot(plotcase, conn):
       LOG.debug("Zipped:\n {0}".format("\n".join(map(str, zip(clustervalues, plotvalues)))))
 
     if plotvalues == []:
-      LOG.warning("No values to plot")
+      LOG.warning("No values to plot, skipping cluster {0}".format(cluster))
       continue
 
     plotvalues = sorted(plotvalues)
+    #plotvalues = map(lambda x: '{0:f}'.format(x).strip(), plotvalues)
     data.append((cluster, plotvalues))
-
-# The following computes the information manually, and does not take outliers
-# into account.
-# The version that we actually use does take the outliers into account, and
-# uses a proper computation of the upper and lower whiskers.
-#    size = len(reductions)
-#    avg = sum(reductions) / size
-#    median_pos = int(size // 2) # size divided by 2, floored returns float, cast to int.
-#    lower_whisker = reductions[0]
-#    upper_whisker = reductions[-1]
-#    median = reductions[median_pos]
-#    lower_quartile = reductions[int(median_pos // 2)]
-#    upper_quartile = reductions[median_pos + int((size - median_pos) // 2)]
-#    data.append((cluster, median, upper_quartile, lower_quartile, upper_whisker, lower_whisker, avg))
-#
-#  boxtemplate = string.Template('''    \\addplot+[
-#    boxplot prepared={
-#      average=${average},
-#      median=${median},
-#      upper quartile=${upper_quartile},
-#      lower quartile=${lower_quartile},
-#      upper whisker=${upper_whisker},
-#      lower whisker=${lower_whisker}
-#    },
-#    ] coordinates {};''')
 
   boxtemplate = string.Template('''    \\addplot+[black,mark=x,mark color=black,
     boxplot={average=auto}]
@@ -261,27 +210,17 @@ def boxplot(plotcase, conn):
     xline = ''
   elif mode == 'speedup':
     xlabel = "Speedup"
-    xmin = 0.0
     xmax = 0.0
     for (cluster, values) in data:
       xmax = max([xmax] + values)
+    xmin = xmax
+    for (cluster, values) in data:
+      xmin = min([xmin] + values)
+
     xmode = 'log'
     xline = '''extra x ticks = 1,
     extra x tick labels = ,
-    extra x tick style = { grid = major },
-    '''
-
-#  print data
-#
-#  boxes = []
-#  yticks = []
-#  yticklabels = []
-#
-#  for index, x in enumerate(data):
-#    boxes.append(boxtemplate.substitute(median = x[1], upper_quartile = x[2], lower_quartile = x[3], upper_whisker = x[4], lower_whisker = x[5], average = x[6]))
-#    if plotcase.get('yticklabels', True):
-#      yticklabels.append(x[0])
-#    yticks.append(str(index+1))
+    extra x tick style = { grid = major },'''
 
   latexsrc = string.Template(open('templatebox_new.txt').read())
   return latexsrc.substitute(yticks = ",".join(yticks), yticklabels= ",".join(yticklabels), boxes = "\n".join(boxes), xlabel = xlabel, xmin=xmin, xmax=xmax, xmode=xmode, xline=xline)
