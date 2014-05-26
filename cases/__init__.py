@@ -13,10 +13,10 @@ from tools import OutOfMemory, Timeout
 LARGE_GRAPH=100000
 COMPUTE_WIDTH_MEASURES = False
 
-BISIM_REDUCE = False
-FMIB_REDUCE = False
-STUT_REDUCE = False
-GSTUT_REDUCE = False
+BISIM_REDUCE = True
+FMIB_REDUCE = True
+STUT_REDUCE = True
+GSTUT_REDUCE = True
 
 TIMEOUT = 1*60*60 # An hour for getting info
 LPSTOOLS_TIMEOUT = TIMEOUT
