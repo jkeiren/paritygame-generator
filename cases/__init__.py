@@ -13,6 +13,11 @@ from tools import OutOfMemory, Timeout
 LARGE_GRAPH=100000
 COMPUTE_WIDTH_MEASURES = False
 
+BISIM_REDUCE = False
+FMIB_REDUCE = False
+STUT_REDUCE = False
+GSTUT_REDUCE = False
+
 TIMEOUT = 1*60*60 # An hour for getting info
 LPSTOOLS_TIMEOUT = TIMEOUT
 MLSOLVER_TIMEOUT= TIMEOUT
@@ -308,46 +313,54 @@ class PGCase(TempObj):
   
   def phase1(self, log):
     self.__collectResults('original')
-    log.debug('Reducing original modulo bisim ({0})'.format(self))
-    self._prefix = self._prefix + '_bisim'
-    bisimpg = self.__reduce(self.__pgfile, 'bisim')
-    log.debug('Collecting information from bisim {0}'.format(self))
-    self.__info(bisimpg)
-    log.debug('Solving stut {0}'.format(self))
-    self.__solve(bisimpg)
+    if BISIM_REDUCE:
+      log.debug('Reducing original modulo bisim ({0})'.format(self))
+      self._prefix = self._prefix + '_bisim'
+      bisimpg = self.__reduce(self.__pgfile, 'bisim')
+      log.debug('Collecting information from bisim {0}'.format(self))
+      self.__info(bisimpg)
+      log.debug('Solving stut {0}'.format(self))
+      self.__solve(bisimpg)
   
   def phase2(self, log):
-    self.__collectResults('bisim')
-    log.debug('Reducing original modulo  ({0})'.format(self))
-    self._prefix = self._prefix.replace('_bisim', '_fmib')
-    fmibpg = self.__reduce(self.__pgfile, 'fmib')
-    log.debug('Collecting information from fmib {0}'.format(self))
-    self.__info(fmibpg)
-    log.debug('Solving fmib {0}'.format(self))
-    self.__solve(fmibpg)
+    if BISIM_REDUCE:
+      self.__collectResults('bisim')
+    if FMIB_REDUCE:
+      log.debug('Reducing original modulo  ({0})'.format(self))
+      self._prefix = self._prefix.replace('_bisim', '_fmib')
+      fmibpg = self.__reduce(self.__pgfile, 'fmib')
+      log.debug('Collecting information from fmib {0}'.format(self))
+      self.__info(fmibpg)
+      log.debug('Solving fmib {0}'.format(self))
+      self.__solve(fmibpg)
       
   def phase3(self, log):
-    self.__collectResults('fmib')
-    log.debug('Reducing original modulo  ({0})'.format(self))
-    self._prefix = self._prefix.replace('_fmib', '_stut')
-    stutpg = self.__reduce(self.__pgfile, 'stut')
-    log.debug('Collecting information from stut {0}'.format(self))
-    self.__info(stutpg)
-    log.debug('Solving stut {0}'.format(self))
-    self.__solve(stutpg)
+    if FMIB_REDUCE:
+      self.__collectResults('fmib')
+    if STUT_REDUCE:
+      log.debug('Reducing original modulo  ({0})'.format(self))
+      self._prefix = self._prefix.replace('_fmib', '_stut')
+      stutpg = self.__reduce(self.__pgfile, 'stut')
+      log.debug('Collecting information from stut {0}'.format(self))
+      self.__info(stutpg)
+      log.debug('Solving stut {0}'.format(self))
+      self.__solve(stutpg)
       
   def phase4(self, log):
-    self.__collectResults('stut')
-    log.debug('Reducing original modulo  ({0})'.format(self))
-    self._prefix = self._prefix.replace('_stut', '_gstut')
-    gstutpg = self.__reduce(self.__pgfile, 'gstut')
-    log.debug('Collecting information from gstut {0}'.format(self))
-    self.__info(gstutpg)
-    log.debug('Solving gstut {0}'.format(self))
-    self.__solve(gstutpg)  
+    if STUT_REDUCE:
+      self.__collectResults('stut')
+    if GSTUT_REDUCE:
+      log.debug('Reducing original modulo  ({0})'.format(self))
+      self._prefix = self._prefix.replace('_stut', '_gstut')
+      gstutpg = self.__reduce(self.__pgfile, 'gstut')
+      log.debug('Collecting information from gstut {0}'.format(self))
+      self.__info(gstutpg)
+      log.debug('Solving gstut {0}'.format(self))
+      self.__solve(gstutpg)  
     
   def phase5(self, log):
-    self.__collectResults('gstut')
+    if GSTUT_REDUCE:
+      self.__collectResults('gstut')
     log.debug('Done {0}'.format(self))
     
 class PBESCase(PGCase):
@@ -371,7 +384,7 @@ class PBESCase(PGCase):
     pgfile = self._newTempFilename('gm')
     try:
       result = tools.pbes2bes('-s0', '-rjittyc', '-opgsolver', pbes.name, pgfile, memlimit=PBES2BES_MEMLIMIT, timeout=PBES2BES_TIMEOUT, timed=True)
-#      os.unlink(pbes.name)
+      os.unlink(pbes.name)
     except (OutOfMemory, Timeout) as e:
       result = e.result
       
