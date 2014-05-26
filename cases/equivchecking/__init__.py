@@ -115,6 +115,5 @@ def getcases(debugOnly = False):
       [SameParamCase('Onebit', 'Onebit', windowsize=1, capacity=1, datasize=d) for d in [2,3]] + \
       [SameParamCase('Onebit', 'SWP', windowsize=1, capacity=1, datasize=d) for d in [2,3] ] + \
       [SameParamCase('SWP', 'SWP', windowsize=w, capacity=1, datasize=d) for d in [2,3] for w in [1,2] ] + \
-      [SameParamCase('Hesselink (Specification)', 'Hesselink (Implementation)', datasize=d) for d in range(2,4) ] + \
-      [SameParamCase('Hesselink (Implementation)', 'Hesselink (Specification)', datasize=d) for d in range(2,4) ]
+      [SameParamCase('Hesselink (Specification)', 'Hesselink (Implementation)', datasize=d) for d in range(2,4) ]
       
