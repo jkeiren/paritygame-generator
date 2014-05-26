@@ -1,13 +1,27 @@
+- xcase: stut
+  ycase: gstut
+  xval: times
+  yval: times
+  Xmax: 3600
+  Ymax: 3600
+  Xmin: 0.01
+  Ymin: 0.01
+  xmode: log
+  ymode: log
+  Xlabel: "Stuttering"
+  Ylabel: "Governed stuttering"
+  jobname: times_gstut_stut
+  format: scatterplot
 - xcase: orig
   ycase: gstut
   xval: times
   yval: times
-  Xmax: 4000
-  Ymax: 4000
+  Xmax: 3600
+  Ymax: 3600
   Xmin: 0.01
   Ymin: 0.01
-  xmode: normal
-  ymode: normal
+  xmode: log
+  ymode: log
   Xlabel: "Original"
   Ylabel: "Governed stuttering"
   jobname: times_gstut_orig
@@ -16,12 +30,12 @@
   ycase: stut
   xval: times
   yval: times
-  Xmax: 4000
-  Ymax: 4000
+  Xmax: 3600
+  Ymax: 3600
   Xmin: 0.01
   Ymin: 0.01
-  xmode: normal
-  ymode: normal
+  xmode: log
+  ymode: log
   Xlabel: "Original"
   Ylabel: "Stuttering"
   jobname: times_stut_orig
@@ -30,12 +44,12 @@
   ycase: bisim
   xval: times
   yval: times
-  Xmax: 4000
-  Ymax: 4000
+  Xmax: 3600
+  Ymax: 3600
   Xmin: 0.01
   Ymin: 0.01
-  xmode: normal
-  ymode: normal
+  xmode: log
+  ymode: log
   Xlabel: "Original"
   Ylabel: "Bisimulation"
   jobname: times_bisim_orig
@@ -44,12 +58,12 @@
   ycase: fmib
   xval: times
   yval: times
-  Xmax: 4000
-  Ymax: 4000
+  Xmax: 3600
+  Ymax: 3600
   Xmin: 0.01
   Ymin: 0.01
-  xmode: normal
-  ymode: normal
+  xmode: log
+  ymode: log
   Xlabel: "Original"
   Ylabel: "Governed bisimulation"
   jobname: times_gov_orig

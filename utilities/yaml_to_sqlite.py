@@ -81,13 +81,19 @@ CREATE TABLE "reduction" (
     "time" REAL
 );
 CREATE VIEW "query_gamesizes" AS
-SELECT gamesizes.*,
+SELECT cases.name,
+       instances.name 'casename',
+       games.reduction,
+       gamesizes.*,
        gamesizes.vertices+gamesizes.edges 'size',
        gamesizes.sccs-gamesizes.trivial_sccs 'nontrivial_sccs',
-       solving.time 'times'
-FROM gamesizes, games, solving
+       solving.time + reduction.time 'times'
+FROM gamesizes, games, solving, cases, instances, reduction
 WHERE gamesizes.id = games.id
-  AND solving.id = games.id;
+  AND games.instance = instances.id
+  AND cases.id = instances.caseid
+  AND solving.id = games.id
+  AND reduction.idto = games.id
 '''
 
 def loaddetaildata(conn, gameid, detailfile, datadir):
@@ -232,7 +238,7 @@ def loaddata(conn, data, datadir, caseid=None):
         red = reduction
         if red == 'orig':
           red = 'original'
-        yamlfile = data.get('files',{}).get(reduction, None)
+        yamlfile = data.get('files',{}).get(red, None)
         gmfile = os.path.splitext(yamlfile)[0].replace('/data/','/temp/') + '.gm'
         c.execute('INSERT INTO games VALUES (null, ?, ?, ?)', (instanceid, reduction, gmfile))
         games[reduction] = c.execute('SELECT last_insert_rowid()').fetchone()[0]
@@ -251,6 +257,8 @@ def loaddata(conn, data, datadir, caseid=None):
         c.execute('INSERT INTO gamesizes (id, vertices, edges) VALUES (?, ?, ?)', (games[reduction], sizes[reduction].get('vertices', None), sizes[reduction].get('edges', None)))
         if reduction != 'orig':
           c.execute('INSERT INTO reduction VALUES (null, ?, ?, ?, ?)', (games['orig'], games[reduction], 'pgconvert', times[reduction].get('reduction', {}).get('reduction', None)))
+        else: # for efficient querying
+          c.execute('INSERT INTO reduction VALUES (null, ?, ?, ?, ?)', (games['orig'], games['orig'], 'dummy', 0.0))
           
         solvingtime = times[red].get('pbespgsolve', {})
         if solvingtime == 'timeout':

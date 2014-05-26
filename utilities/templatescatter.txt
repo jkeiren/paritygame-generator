@@ -1,9 +1,3 @@
-\documentclass{minimal}
-\usepackage[active,tightpage]{preview}
-\usepackage{pgfplots}
-\pgfplotsset{compat=1.8}
-\begin{document}
-\begin{preview}
   \begin{tikzpicture}[mark size=2.5pt,remember picture,scale=0.77]
     \begin{axis}[axis x line=bottom,
                        axis y line=left,
@@ -35,5 +29,3 @@
       \legend{~modelchecking, ~equivalence, ~mlsolver, ~specialcases, ~random}
     \end{axis}
   \end{tikzpicture}
-\end{preview}
-\end{document}

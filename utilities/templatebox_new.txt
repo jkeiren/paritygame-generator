@@ -1,0 +1,22 @@
+\begin{tikzpicture}[mark size=2.5pt,remember picture,scale=0.77]
+  \begin{axis}
+    [${xline}
+    xmin=${xmin}, xmax=${xmax},
+    xmode=${xmode},
+    width=7.5cm,
+    y=0.8cm,
+    y axis line style={transparent},
+    every non boxed x axis/.style={
+         xtick align=center,
+         enlarge x limits=false,
+    },
+    axis x line=bottom,
+    ytick style={transparent},
+    ymin=0.4,
+    xlabel={${xlabel}},
+    ytick={${yticks}},
+    yticklabels={${yticklabels}},
+    ]
+${boxes}
+  \end{axis}
+\end{tikzpicture}
