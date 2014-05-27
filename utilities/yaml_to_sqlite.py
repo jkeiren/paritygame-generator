@@ -185,10 +185,10 @@ def loaddetaildata(conn, gameid, detailfile, datadir):
             gameid)) 
   
 
-def loaddata(conn, data, datadir, caseid=None):
+def loaddata(conn, data, datadir, store_reduced, caseid=None):
   if isinstance(data, list):
     for d in data:
-      loaddata(conn, d, datadir)
+      loaddata(conn, d, datadir, store_reduced)
   else:
     assert isinstance(data, dict)
     if caseid is None and data.has_key('case'):
@@ -210,12 +210,12 @@ def loaddata(conn, data, datadir, caseid=None):
       LOG.info("Added case with id {0}".format(caseid))
       
       if not data.has_key('properties') and not data.has_key('instances'):
-        loaddata(conn, data, datadir, caseid)
+        loaddata(conn, data, datadir, store_reduced, caseid)
         
       for property in data.get('properties', []):
-        loaddata(conn, property, datadir, caseid)
+        loaddata(conn, property, datadir, store_reduced, caseid)
       for instance in data.get('instances', []):
-        loaddata(conn, instance, datadir, caseid)
+        loaddata(conn, instance, datadir, store_reduced, caseid)
           
     else:
       # Instance level
@@ -232,20 +232,21 @@ def loaddata(conn, data, datadir, caseid=None):
       instanceid = c.execute('SELECT last_insert_rowid()').fetchone()[0]
       LOG.info("Added instance {0}".format(instanceid))
       
-      equivalences = ['orig', 'bisim', 'fmib', 'stut', 'gstut']
+      equivalences = ['orig']
+      if store_reduced:
+        equivalences += ['bisim', 'fmib', 'stut', 'gstut']
+      
       games = {}
       for reduction in equivalences:
-        red = reduction
-        if red == 'orig':
-          red = 'original'
-        yamlfile = data.get('files',{}).get(red, None)
+        yamlfile = data.get('files',{}).get(reduction, None)
+        LOG.debug(yamlfile)
         gmfile = os.path.splitext(yamlfile)[0].replace('/data/','/temp/') + '.gm'
         c.execute('INSERT INTO games VALUES (null, ?, ?, ?)', (instanceid, reduction, gmfile))
         games[reduction] = c.execute('SELECT last_insert_rowid()').fetchone()[0]
       
-      sizes = data['sizes']
-      times = data['times']
-      solutions = data['solutions']
+      sizes = data.get('sizes', {})
+      times = data.get('times', {})
+      solutions = data.get('solutions', {})
       files = data['files']
       c.execute('INSERT INTO generation VALUES (?, ?, ?)', (games['orig'], data['generation'].get('times', {}).get('total', None), data['generation'].get('tool', None)))
       for reduction in equivalences:
@@ -260,7 +261,7 @@ def loaddata(conn, data, datadir, caseid=None):
         else: # for efficient querying
           c.execute('INSERT INTO reduction VALUES (null, ?, ?, ?, ?)', (games['orig'], games['orig'], 'dummy', 0.0))
           
-        solvingtime = times[red].get('pbespgsolve', {})
+        solvingtime = times[reduction].get('pbespgsolve', {})
         if solvingtime == 'timeout':
           solvingtime = None
         else:
@@ -271,10 +272,10 @@ def loaddata(conn, data, datadir, caseid=None):
         c.execute('INSERT INTO solving VALUES (?, ?, ?, ?)', (games[reduction], solvingtime, 'pbespgsolve', solution))
         conn.commit()
         
-        loaddetaildata(conn, games[reduction], files[red], datadir)
+        loaddetaildata(conn, games[reduction], files[reduction], datadir)
         conn.commit()
         
-def run(resultfile, sqlitefile, initialise):
+def run(resultfile, sqlitefile, initialise, store_reduced):
   conn = sqlite3.connect(sqlitefile)
   if initialise:
     conn.executescript(SCHEMA_QUERY)
@@ -283,7 +284,7 @@ def run(resultfile, sqlitefile, initialise):
   datadir = os.path.dirname(os.path.abspath(resultfile))
   data = yaml.load(open(resultfile, 'r'))
   
-  loaddata(conn, data, datadir)
+  loaddata(conn, data, datadir, store_reduced)
   
   conn.commit()  
   conn.close()
@@ -292,6 +293,8 @@ def runCmdLine():
   parser = optparse.OptionParser(usage='usage: %prog [options] resultfile sqlitefile')
   parser.add_option('-v', action='count', dest='verbosity',
                     help='Be more verbose. Use more than once to increase verbosity even more.')
+  parser.add_option('-r', action='store_true', dest='redgames',
+                    help='Also store the data for reduced games. If this option is not passed only original games are stored.')
   parser.add_option('-i', action='store_true', dest='initialise',
                     help='Intialise database with its schema.')
   options, args = parser.parse_args()
@@ -309,7 +312,7 @@ def runCmdLine():
   if options.verbosity > 1:
     LOG.setLevel(logging.DEBUG)
   
-  run(resultfile, sqlitefile, options.initialise)
+  run(resultfile, sqlitefile, options.initialise, options.redgames)
 
 if __name__ == '__main__':
   runCmdLine()

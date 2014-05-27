@@ -13,7 +13,7 @@ clusters = {
                      'ABP(BW)', 'CABP', 'Par', 'SWP', 'Leader', 'Othello', \
                      'Clobber', 'Snake', 'Hex', 'Domineering', 'Hanoi', \
                      'Elevator', 'CCP', 'Hesselink', 'Onebit', 'BRP', \
-                     'elevatorverification', 'towersofhanoi'],
+                     'elevatorverification', 'towersofhanoi', 'IEEE1394'],
   'equivalence':   ['Buffer/', 'ABP/', 'ABP(BW)/','CABP/','Par/','Onebit/','SWP/','Hesselink/'],
   'specialcases':  ['cliquegame', 'jurdzinskigame', 'laddergame', \
                     'modelcheckerladder', 'recursiveladder'],
@@ -31,7 +31,8 @@ def getCluster(case):
     for name in names:
       if case.startswith(name) and not case.startswith('{0}/'.format(name)):
         return cluster
-  assert False
+  
+  raise Exception("No cluster found for {0}".format(case))
 
 _QUERY = '''
 SELECT X.{0} as xval,
