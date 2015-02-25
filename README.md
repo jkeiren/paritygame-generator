@@ -11,6 +11,8 @@ Generated games
 ---------------
 The parity games that were generated using this script, and are reported in Chapter 5 of [J.J.A. Keiren. Advanced Reduction Techniques for Model Checking. PhD thesis, Eindhoven University of Technology, 2013](http://www.jeroenkeiren.nl/wp-content/uploads/2013/10/Keiren-MSc-thesis-2009-An-experimental-study-of-algorithms-and-optimisations-for-parity-games-with-an-application-to-Boolean-Equation-Systems.pdf), can be downloaded in PGSolver format from [here](https://mega.co.nz/#F!YRxwXILY!MkV-ZEVMeVieHbgJZAf76w).
 
+All parity games are in max parity game format, i.e. they are based on the assumption that even wins the game if the *greatest* priority that occurs infinitely often is even (opposed to min parity games in which the least priority is considered).
+
 If you would like to add parity games to this benchmark suite, or would like to add extra statistics, feel free to contact me.
 
 Platform requirements
