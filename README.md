@@ -23,8 +23,8 @@ The generated games, and the corresponding data is available from the servers of
 * [Equivalence checking](http://www.open.ou.nl/jke/games/equivchecking.zip) Parity games encoding equivalence checking problems.
 * [PGSolver](http://www.open.ou.nl/jke/games/pgsolver.zip) Parity games generated using PGSolver. These include: random games, and games that are hard for certain algorithms.
 * [MLSolver](http://www.open.ou.nl/jke/games/mlsolver.zip) Parity games generated using MLSolver. These are games that encode satisfiability and validity problems for modal logics.
-* [Data (yaml)](http://www.open.ou.nl/jke/games/data.yaml) This is a file in YAML format that includes high-level information about *all* parity games described before. Detailed (structural) information about the games can be found as separate YAML files in the respectipe ZIP archives.
-* [Data (sqlite)](http://www.open.ou.nl/jke/games/data.sqlite) This contains a database in SQLite format that was derived from the YAML files provided in the archives, and the previous data file. The sole purpose of this derived data is to enable efficient plotting of results. The plots in the paper have been based on this file.
+* [Data (yaml)](http://www.open.ou.nl/jke/games/data.yaml.zip) This is a file in YAML format that includes high-level information about *all* parity games described before. Detailed (structural) information about the games can be found as separate YAML files in the respectipe ZIP archives.
+* [Data (sqlite)](http://www.open.ou.nl/jke/games/data.sqlite.zip) This contains a database in SQLite format that was derived from the YAML files provided in the archives, and the previous data file. The sole purpose of this derived data is to enable efficient plotting of results. The plots in the paper have been based on this file.
 
 For the time being, the data is also available from [here](https://mega.co.nz/#F!YRxwXILY!MkV-ZEVMeVieHbgJZAf76w).
 
