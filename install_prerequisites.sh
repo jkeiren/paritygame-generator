@@ -19,7 +19,7 @@ tooldir=${dir}/tools
 installdir=${tooldir}/install
 bindir=${tooldir}/install/bin
 
-nthreads=1
+nthreads=4
 if [[ $# -ge 1 ]]; then
   nthreads=$1
 fi
@@ -35,15 +35,15 @@ export LD_LIBRARY_PATH=${tooldir}/install/lib:$LD_LIBRARY_PATH
 # yaml-cpp
 # dependency of pginfo, not standard available on most platforms
 ################################################################
+yamlcppversion="0.5.2"
 cd ${tooldir}
-wget https://github.com/jbeder/yaml-cpp/archive/release-0.3.0.tar.gz
-mv release-0.3.0.tar.gz yaml-cpp-0.3.0.tar.gz
-tar -zxvf yaml-cpp-0.3.0.tar.gz
+wget https://github.com/jbeder/yaml-cpp/archive/release-${yamlcppversion}.tar.gz
+mv release-${yamlcppversion}.tar.gz yaml-cpp-${yamlcppversion}.tar.gz
+tar -zxvf yaml-cpp-${yamlcppversion}.tar.gz
 mkdir yaml-build
 cd yaml-build
-cmake ../yaml-cpp-release-0.3.0 -DCMAKE_INSTALL_PREFIX=${installdir} -DBUILD_SHARED_LIBS=ON
+cmake ../yaml-cpp-release-${yamlcppversion} -DCMAKE_INSTALL_PREFIX=${installdir} -DBUILD_SHARED_LIBS=ON
 make -j${nthreads} install
-
 
 # pginfo
 ########
@@ -61,18 +61,13 @@ cmake ../pginfo \
 make -j${nthreads}
 ln -s `pwd`/pginfo ${tooldir}/install/bin
 
+
 # mCRL2
 #######
 cd ${tooldir}
-#wget http://www.mcrl2.org/download/release/mcrl2-201210.1.tar.gz
-#tar -zxvf mcrl2-201210.1.tar.gz
-#cd mcrl2-201210.1
 mkdir mcrl2
 cd mcrl2
-svn checkout https://svn.win.tue.nl/repos/MCRL2/trunk@11703 src
-cd src
-patch -p0 < ${tooldir}/pbespgsolve.patch
-cd ..
+svn checkout https://svn.win.tue.nl/repos/MCRL2/tags/mcrl2-201707.1 src
 mkdir build
 cd build
 cmake ../src -DCMAKE_INSTALL_PREFIX=${tooldir}/install \
@@ -87,12 +82,13 @@ make install -j${nthreads}
 ###########
 cd ${tooldir}
 git clone https://github.com/tue-mdse/pgconvert.git
+cd pgconvert
+git submodule update --init --recursive
+cd ..
 mkdir pgconvert-build
 cd pgconvert-build
 cmake ../pgconvert \
-  -DCMAKE_INSTALL_PREFIX=${tooldir}/install \
-  -DMCRL2_INCLUDE=${tooldir}/install/include \
-  -DMCRL2_LIB=${tooldir}/install/lib/mcrl2
+  -DCMAKE_INSTALL_PREFIX=${tooldir}/install
 make -j${nthreads}
 ln -s `pwd`/pgconvert ${tooldir}/install/bin
 
