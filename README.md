@@ -2,6 +2,9 @@ Parity game generator
 =====================
 This repository provides a generator for parity games that bundles different ways to generate parity games, and uses parallel processing to generate over 1000 parity games. Currently four classes of games are included: random games, synthetic games that are hard for certain algorithms, model checking problems and equivalence checking problems.
 
+If you use the parity game generator or the generated games in your paper, please cite
+> J.J.A. Keiren. [Benchmarks for Parity Games](http://dx.doi.org/10.1007/978-3-319-24644-4_9). [FSEN 2015](http://fsen.ir/2015), Lecture Notes in Computer Science 9392, Springer-Verlag, pp. 126-142, 2015.
+
 The generator also collects structural information about the parity game and stores this in the structured YAML format. For convenience some utilities are provided to check consistency of the output, and to transform the YAML data into an SQLite database. This latter database allows quick querying, and plotting of data.
 
 The current version of the parity game generator was developed to evaluate equivalence reductions of parity games, and therefore includes the possibility to reduce games using 4 types of equivalences (see also the "thesis" tag).
@@ -14,7 +17,7 @@ Using this script, a set of parity games was generated as a benchmark suite. The
 
 Furthermore, a description of the set of benchmarks has been published separately as:
 
-* J.J.A. Keiren. Benchmarks for Parity Games. To appear in [FSEN 2015](http://fsen.ir/2015).
+* J.J.A. Keiren. [Benchmarks for Parity Games](http://dx.doi.org/10.1007/978-3-319-24644-4_9). [FSEN 2015](http://fsen.ir/2015), Lecture Notes in Computer Science 9392, Springer-Verlag, pp. 126-142, 2015.
 * J.J.A. Keiren. Benchmarks for Parity Games (extended version). [arXiv:1407.3121](http://arxiv.org/abs/1407.3121) [cs.LO]
 
 The generated games, and the corresponding data is available from the servers of the Open University in the Netherlands, you can download the following:
@@ -26,7 +29,7 @@ The generated games, and the corresponding data is available from the servers of
 * [Data (yaml)](http://www.open.ou.nl/jke/games/data.yaml.zip) This is a file in YAML format that includes high-level information about *all* parity games described before. Detailed (structural) information about the games can be found as separate YAML files in the respectipe ZIP archives.
 * [Data (sqlite)](http://www.open.ou.nl/jke/games/data.sqlite.zip) This contains a database in SQLite format that was derived from the YAML files provided in the archives, and the previous data file. The sole purpose of this derived data is to enable efficient plotting of results. The plots in the paper have been based on this file.
 
-For the time being, the data is also available from [here](https://mega.co.nz/#F!YRxwXILY!MkV-ZEVMeVieHbgJZAf76w).
+For the time being, the data is also available from [here](https://mega.co.nz/#F!YRxwXILY!MkV-ZEVMeVieHbgJZAf76w). *It is, however, recommended to use the links in the list above*.
 
 All parity games are in max parity game format, i.e. they are based on the assumption that even wins the game if the *greatest* priority that occurs infinitely often is even (opposed to min parity games in which the least priority is considered).
 
