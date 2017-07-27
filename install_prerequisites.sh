@@ -36,11 +36,12 @@ export LD_LIBRARY_PATH=${tooldir}/install/lib:$LD_LIBRARY_PATH
 # dependency of pginfo, not standard available on most platforms
 ################################################################
 cd ${tooldir}
-wget http://yaml-cpp.googlecode.com/files/yaml-cpp-0.3.0.tar.gz
+wget https://github.com/jbeder/yaml-cpp/archive/release-0.3.0.tar.gz
+mv release-0.3.0.tar.gz yaml-cpp-0.3.0.tar.gz
 tar -zxvf yaml-cpp-0.3.0.tar.gz
 mkdir yaml-build
 cd yaml-build
-cmake ../yaml-cpp -DCMAKE_INSTALL_PREFIX=${installdir} -DBUILD_SHARED_LIBS=ON
+cmake ../yaml-cpp-release-0.3.0 -DCMAKE_INSTALL_PREFIX=${installdir} -DBUILD_SHARED_LIBS=ON
 make -j${nthreads} install
 
 
