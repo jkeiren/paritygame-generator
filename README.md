@@ -2,6 +2,9 @@ Parity game generator
 =====================
 This repository provides a generator for parity games that bundles different ways to generate parity games, and uses parallel processing to generate over 1000 parity games. Currently four classes of games are included: random games, synthetic games that are hard for certain algorithms, model checking problems and equivalence checking problems.
 
+If you use the parity game generator or the generated games in your paper, please cite
+> J.J.A. Keiren. [Benchmarks for Parity Games](http://dx.doi.org/10.1007/978-3-319-24644-4_9). [FSEN 2015](http://fsen.ir/2015), Lecture Notes in Computer Science 9392, Springer-Verlag, pp. 126-142, 2015.
+
 The generator also collects structural information about the parity game and stores this in the structured YAML format. For convenience some utilities are provided to check consistency of the output, and to transform the YAML data into an SQLite database. This latter database allows quick querying, and plotting of data.
 
 The current version of the parity game generator was developed to evaluate equivalence reductions of parity games, and therefore includes the possibility to reduce games using 4 types of equivalences (see also the "thesis" tag).
@@ -14,7 +17,7 @@ Using this script, a set of parity games was generated as a benchmark suite. The
 
 Furthermore, a description of the set of benchmarks has been published separately as:
 
-* J.J.A. Keiren. Benchmarks for Parity Games. To appear in [FSEN 2015](http://fsen.ir/2015).
+* J.J.A. Keiren. [Benchmarks for Parity Games](http://dx.doi.org/10.1007/978-3-319-24644-4_9). [FSEN 2015](http://fsen.ir/2015), Lecture Notes in Computer Science 9392, Springer-Verlag, pp. 126-142, 2015.
 * J.J.A. Keiren. Benchmarks for Parity Games (extended version). [arXiv:1407.3121](http://arxiv.org/abs/1407.3121) [cs.LO]
 
 The generated games, and the corresponding data is available from the servers of the Open University in the Netherlands, you can download the following:
