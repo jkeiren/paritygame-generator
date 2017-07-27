@@ -26,7 +26,7 @@ The generated games, and the corresponding data is available from the servers of
 * [Data (yaml)](http://www.open.ou.nl/jke/games/data.yaml.zip) This is a file in YAML format that includes high-level information about *all* parity games described before. Detailed (structural) information about the games can be found as separate YAML files in the respectipe ZIP archives.
 * [Data (sqlite)](http://www.open.ou.nl/jke/games/data.sqlite.zip) This contains a database in SQLite format that was derived from the YAML files provided in the archives, and the previous data file. The sole purpose of this derived data is to enable efficient plotting of results. The plots in the paper have been based on this file.
 
-For the time being, the data is also available from [here](https://mega.co.nz/#F!YRxwXILY!MkV-ZEVMeVieHbgJZAf76w).
+For the time being, the data is also available from [here](https://mega.co.nz/#F!YRxwXILY!MkV-ZEVMeVieHbgJZAf76w). *It is, however, recommended to use the links in the list above*.
 
 All parity games are in max parity game format, i.e. they are based on the assumption that even wins the game if the *greatest* priority that occurs infinitely often is even (opposed to min parity games in which the least priority is considered).
 
