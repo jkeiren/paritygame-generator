@@ -56,7 +56,7 @@ mkdir pginfo-build
 cd pginfo-build
 cmake ../pginfo \
   -DCMAKE_INSTALL_PREFIX=${tooldir}/install \
-  -DYAMLCPP_INCLUDE_DIR=${installdir}/include/yaml-cpp \
+  -DYAMLCPP_INCLUDE_DIR=${installdir}/include \
   -DYAMLCPP_LIBRARY=${installdir}/lib/libyaml-cpp.so 
 make -j${nthreads}
 ln -s `pwd`/pginfo ${tooldir}/install/bin
